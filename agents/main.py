@@ -9,6 +9,7 @@ AGENT_PASSWORD = "admin"
 
 
 class NotifierAgent(Agent):
+    # @TODO to be removed
     class NotifyBehaviour(OneShotBehaviour):
         async def run(self):
             print("NotifyBehaviour running")
@@ -30,6 +31,7 @@ class NotifierAgent(Agent):
 class ParkingAgent(Agent):
     class CheckParkingBehaviour(CyclicBehaviour):
         async def run(self):
+            # @TODO to be implemented
             print("Waiting for incoming messages...")
             msg = await self.receive(timeout=10)  # Wait for a message for 10 seconds
             if msg:
@@ -54,7 +56,22 @@ class ParkingAgent(Agent):
         self.add_behaviour(behaviour)
 
 
+class RegionalCoordinator(Agent):
+    class CheckRegionalCoordinatorBehaviour(CyclicBehaviour):
+        async def run(self):
+            # @TODO to be implemented
+            pass
+
+
+class User(Agent):
+    class CheckUserBehaviour(CyclicBehaviour):
+        async def run(self):
+            # @TODO to be implemented
+            pass
+
+
 class HelperAgent(Agent):
+    # @TODO to be removed
     class RecvBehav(OneShotBehaviour):
         async def run(self):
             print("RecvBehav running")
