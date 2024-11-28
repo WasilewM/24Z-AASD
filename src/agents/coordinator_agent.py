@@ -8,6 +8,7 @@ from spade.template import Template
 from constants import DEFAULT_HOST
 from messages.check_offers import CheckOffers
 from messages.check_parking import CheckParking
+from messages.consolidated_offers import ConsolidatedOffers
 from messages.parking_availability import ParkingAvailable
 
 
@@ -55,6 +56,9 @@ class RegionalCoordinator(Agent):
         template.set_metadata("action", "reservation-response")
         return template
 
+    def _consolidate_offers_per_user(self, user) -> ConsolidatedOffers:
+        raise NotImplementedError
+
     class CheckParkingOffers(CyclicBehaviour):
         def _check_if_request_is_within_region(self, request_x, request_y):
             return self.agent._x_min <= request_x < self.agent._x_max and self.agent._y_min <= request_y < self.agent._y_max
@@ -86,7 +90,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=1)
             if msg:
                 parking_available = ParkingAvailable(**json.loads(msg.body))
-                raise NotImplementedError
+                user = msg.thread
+                self.agent._per_user_data[user].append(parking_available)
+
+                if len(self.agent._per_user_data[user]) == len(self.agent._parking_agents_jids):
+                    consolidated_offers = self.agent._consolidate_offers_per_user(user)
+                    consolidated_offers = str(consolidated_offers.dict())
+                    to_send = Message(to=user, body=consolidated_offers, metadata={
+                                      "performative": "inform", "action": "consolidated-offers"})
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         # while making and modyfing reservation
