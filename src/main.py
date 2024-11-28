@@ -1,8 +1,8 @@
 import spade
 
 from agents.coordinator_agent import RegionalCoordinator
+from constants import DEFAULT_HOST
 
-DEFAULT_HOST = "server_hello"
 AGENT_PASSWORD = "admin"
 
 

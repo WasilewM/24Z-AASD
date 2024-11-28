@@ -4,6 +4,8 @@ from messages.base import BaseMessage
 
 
 @dataclass
-class CheckParking(BaseMessage):
+class CheckOffers(BaseMessage):
+    x: int
+    y: int
     time_start: int  # assume timestamp
     time_stop: int  # assume timestamp
