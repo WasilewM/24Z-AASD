@@ -8,8 +8,11 @@ from spade.template import Template
 from constants import DEFAULT_HOST
 from messages.check_offers import CheckOffers
 from messages.check_parking import CheckParking
-from messages.consolidated_offers import ConsolidatedOffers
+from messages.consolidated_offers import ConsolidatedOffers, Offer
+from messages.modify_reservation import ModifyReservation
 from messages.parking_availability import ParkingAvailable
+from messages.reservation_request import RequestReservation
+from messages.response import ReservationResponse
 
 
 class RegionalCoordinator(Agent):
@@ -20,6 +23,7 @@ class RegionalCoordinator(Agent):
         self._y_min = y_from
         self._y_max = y_to
         self._parking_agents_jids = parking_agents_jids  # list of parking agents jids within the region
+        # {user_jid: {parkings: [parking_available, ...], destination: (x, y)}}
         self._per_user_data = {}
 
     def _prepare_check_offers_template(self):
@@ -46,20 +50,35 @@ class RegionalCoordinator(Agent):
     def _prepare_parking_availability_template(self):
         template = Template()
         template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "query-ref")
+        template.set_metadata("performative", "inform")
         template.set_metadata("action", "parking-availability")
         return template
 
     def _prepare_reservation_response_template(self):
         template = Template()
         template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.set_metadata("performative", "inform")
         template.set_metadata("action", "reservation-response")
         return template
 
+    def _calculate_distance(self, x_user, y_user, x_parking, y_parking):
+        return ((x_user - x_parking) ** 2 + (y_user - y_parking) ** 2) ** 0.5
+
     def _consolidate_offers_per_user(self, user) -> ConsolidatedOffers:
-        raise NotImplementedError
+        dest_x, dest_y = self._per_user_data[user]["destination"]
+        free_parkings = [parking for parking in self._per_user_data[user]["parkings"] if parking.available]
+        offers = []
+        for parking in free_parkings:
+            offer = Offer(parking_id=parking.parking_id, price=parking.parking_price,
+                          distance=self._calculate_distance(dest_x, dest_y, parking.parking_x, parking.parking_y))
+            offers.append(offer)
+        offers = sorted(offers, key=lambda x: x.distance)
+        offers = offers[:3]
+        return ConsolidatedOffers(offers=offers)
 
     class CheckParkingOffers(CyclicBehaviour):
+        """Behaviour for checking parking offers"""
+
         def _check_if_request_is_within_region(self, request_x, request_y):
             return self.agent._x_min <= request_x < self.agent._x_max and self.agent._y_min <= request_y < self.agent._y_max
 
@@ -67,7 +86,8 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=1)
             if msg:
                 check_offers_message = CheckOffers(**json.loads(msg.body))
-                self.agent._per_user_data[check_offers_message.sender] = []
+                self.agent._per_user_data[check_offers_message.sender] = {
+                    "parkings": [], "destination": (check_offers_message.x, check_offers_message.y)}
                 if self._check_if_request_is_within_region(check_offers_message.x, check_offers_message.y):
                     check_parking = str(CheckParking(check_offers_message.time_start,
                                         check_offers_message.time_stop).dict())
@@ -78,31 +98,56 @@ class RegionalCoordinator(Agent):
                         await self.send(to_send)
 
     class MakeReservation(CyclicBehaviour):
+        """Behaviour for making reservation"""
+
         async def run(self):
-            raise NotImplementedError
+            msg = await self.receive(timeout=1)
+            if msg:
+                reservation_request = RequestReservation(**json.loads(msg.body))
+                requst_to_parking = Message(to=reservation_request.parking_id, body=msg.body, metadata={
+                                            "performative": "request", "action": "make-reservation"})
+                await self.send(requst_to_parking)
 
     class ModifyReservation(CyclicBehaviour):
+        """Behaviour for modifying reservation"""
+
         async def run(self):
-            raise NotImplementedError
+            msg = await self.receive(timeout=1)
+            if msg:
+                modification_request = ModifyReservation(**json.loads(msg.body))
+                requst_to_parking = Message(to=modification_request.parking_id, body=msg.body, metadata={
+                                            "performative": "request", "action": "modify-reservation"})
+                await self.send(requst_to_parking)
 
     class AwaitParkingAvailability(CyclicBehaviour):
+        """Behaviour for waiting for parking availability, when all parkings are checked
+        then consolidated offers are sent to user"""
+
         async def run(self):
             msg = await self.receive(timeout=1)
             if msg:
                 parking_available = ParkingAvailable(**json.loads(msg.body))
                 user = msg.thread
-                self.agent._per_user_data[user].append(parking_available)
+                self.agent._per_user_data[user]["parkings"].append(parking_available)
 
-                if len(self.agent._per_user_data[user]) == len(self.agent._parking_agents_jids):
+                if len(self.agent._per_user_data[user]["parkings"]) == len(self.agent._parking_agents_jids):
                     consolidated_offers = self.agent._consolidate_offers_per_user(user)
                     consolidated_offers = str(consolidated_offers.dict())
+                    self.agent._per_user_data.pop(user)
                     to_send = Message(to=user, body=consolidated_offers, metadata={
                                       "performative": "inform", "action": "consolidated-offers"})
+                    await self.send(to_send)
 
     class AwaitReservationConfirmation(CyclicBehaviour):
-        # while making and modyfing reservation
+        """Behaviour for waiting for reservation making or changing confirmation"""
+
         async def run(self):
-            raise NotImplementedError
+            msg = await self.receive(timeout=1)
+            if msg:
+                reservation_response = ReservationResponse(**json.loads(msg.body))
+                to_send = Message(to=reservation_response.user_id, body=msg.body, metadata={
+                                  "performative": "inform", "action": "reservation-response"})
+                await self.send(to_send)
 
     async def setup(self):
         check_offers_behaviour = self.CheckParkingOffers()
