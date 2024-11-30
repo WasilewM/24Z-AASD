@@ -6,7 +6,7 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 - `hello` agent development directory.
 
 ## [0.1.1] - 2024-11-29
-### Chnaged
+### Changed
 - `ProcessReservation` and `SendResponse` interactions had duplicate communicative acts like `refuse` | `agree`. Changed the performative to `inform` to handle responses with a single behavior, as multiple performatives cannot be given simultaneously.
 
 ## [0.1.0] - 2024-11-28
