@@ -16,7 +16,7 @@ from messages.response import ReservationResponse
 
 
 class RegionalCoordinator(Agent):
-    def __init__(self, jid, password, x_from, x_to, y_from, y_to, parking_agents_jids):
+    def __init__(self, jid, password, x_from, x_to, y_from, y_to, parking_agents_jids=list()):
         super().__init__(jid, password)
         self._x_min = x_from
         self._x_max = x_to
