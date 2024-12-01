@@ -13,6 +13,7 @@ class Offer(BaseMessage):
 
 @dataclass
 class ConsolidatedOffers(BaseMessage):
+    """Message with best offers in respond to User's CheckOffers message"""
     offers: List[Offer]
 
     def dict(self):
