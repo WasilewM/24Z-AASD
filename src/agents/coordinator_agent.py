@@ -69,8 +69,11 @@ class RegionalCoordinator(Agent):
         free_parkings = [parking for parking in self._per_user_data[user]["parkings"] if parking.available]
         offers = []
         for parking in free_parkings:
-            offer = Offer(parking_id=parking.parking_id, price=parking.parking_price,
-                          distance=self._calculate_distance(dest_x, dest_y, parking.parking_x, parking.parking_y))
+            offer = Offer(
+                parking_id=parking.parking_id,
+                price=parking.parking_price,
+                distance=self._calculate_distance(dest_x, dest_y, parking.parking_x, parking.parking_y),
+            )
             offers.append(offer)
         offers = sorted(offers, key=lambda x: x.distance)
         offers = offers[:OFFERS_TO_RETURN]
@@ -80,7 +83,10 @@ class RegionalCoordinator(Agent):
         """Behaviour for checking parking offers"""
 
         def _check_if_request_is_within_region(self, request_x, request_y):
-            return self.agent._x_min <= request_x < self.agent._x_max and self.agent._y_min <= request_y < self.agent._y_max
+            return (
+                self.agent._x_min <= request_x < self.agent._x_max
+                and self.agent._y_min <= request_y < self.agent._y_max
+            )
 
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
@@ -88,13 +94,20 @@ class RegionalCoordinator(Agent):
                 check_offers_message = CheckOffers(**json.loads(msg.body))
                 if self._check_if_request_is_within_region(check_offers_message.x, check_offers_message.y):
                     self.agent._per_user_data[check_offers_message.sender] = {
-                        "parkings": [], "destination": (check_offers_message.x, check_offers_message.y)}
-                    check_parking = str(CheckParking(check_offers_message.time_start,
-                                        check_offers_message.time_stop).dict())
+                        "parkings": [],
+                        "destination": (check_offers_message.x, check_offers_message.y),
+                    }
+                    check_parking = str(
+                        CheckParking(check_offers_message.time_start, check_offers_message.time_stop).dict()
+                    )
                     for jid in self.agent._parking_agents_jids:
                         # user_jid@host in message.thread, need in response from parking agent
-                        to_send = Message(to=jid, body=check_parking, thread=check_offers_message.sender, metadata={
-                                          "performative": "query-ref", "action": "check-parking"})
+                        to_send = Message(
+                            to=jid,
+                            body=check_parking,
+                            thread=check_offers_message.sender,
+                            metadata={"performative": "query-ref", "action": "check-parking"},
+                        )
                         await self.send(to_send)
 
     class MakeReservation(CyclicBehaviour):
@@ -104,8 +117,11 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_request = RequestReservation(**json.loads(msg.body))
-                request_to_parking = Message(to=reservation_request.parking_id, body=msg.body, metadata={
-                    "performative": "request", "action": "make-reservation"})
+                request_to_parking = Message(
+                    to=reservation_request.parking_id,
+                    body=msg.body,
+                    metadata={"performative": "request", "action": "make-reservation"},
+                )
                 await self.send(request_to_parking)
 
     class ModifyReservation(CyclicBehaviour):
@@ -115,8 +131,11 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 modification_request = ModifyReservation(**json.loads(msg.body))
-                request_to_parking = Message(to=modification_request.parking_id, body=msg.body, metadata={
-                    "performative": "request", "action": "modify-reservation"})
+                request_to_parking = Message(
+                    to=modification_request.parking_id,
+                    body=msg.body,
+                    metadata={"performative": "request", "action": "modify-reservation"},
+                )
                 await self.send(request_to_parking)
 
     class AwaitParkingAvailability(CyclicBehaviour):
@@ -134,8 +153,11 @@ class RegionalCoordinator(Agent):
                     consolidated_offers = self.agent._consolidate_offers_per_user(user)
                     consolidated_offers = str(consolidated_offers.dict())
                     self.agent._per_user_data.pop(user)
-                    to_send = Message(to=user, body=consolidated_offers, metadata={
-                                      "performative": "inform", "action": "consolidated-offers"})
+                    to_send = Message(
+                        to=user,
+                        body=consolidated_offers,
+                        metadata={"performative": "inform", "action": "consolidated-offers"},
+                    )
                     await self.send(to_send)
 
     class AwaitReservationConfirmation(CyclicBehaviour):
@@ -145,8 +167,11 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse(**json.loads(msg.body))
-                to_send = Message(to=reservation_response.user_id, body=msg.body, metadata={
-                                  "performative": "inform", "action": "reservation-response"})
+                to_send = Message(
+                    to=reservation_response.user_id,
+                    body=msg.body,
+                    metadata={"performative": "inform", "action": "reservation-response"},
+                )
                 await self.send(to_send)
 
     async def setup(self):

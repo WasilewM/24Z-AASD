@@ -6,6 +6,7 @@ from spade.template import Template
 
 from constants import DEFAULT_HOST
 
+
 class ParkingAgent(Agent):
     def __init__(self, jid, password, x, y, parking_spots):
         super().__init__(jid, password)

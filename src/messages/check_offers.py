@@ -7,6 +7,7 @@ from messages.base import BaseMessage
 class CheckOffers(BaseMessage):
     """Message from User to RegionalCoordinator
     to check offers for a given position and time range."""
+
     x: int
     y: int
     time_start: int  # assume timestamp
