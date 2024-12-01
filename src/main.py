@@ -1,14 +1,21 @@
 import spade
 
 from agents.coordinator_agent import RegionalCoordinator
+from agents.parking_agent import ParkingAgent
 from constants import DEFAULT_HOST
 
 AGENT_PASSWORD = "admin"
 
 
 async def main():
+    parking = ParkingAgent(f"parking100@{DEFAULT_HOST}", AGENT_PASSWORD, 1, 1, 100)
+    await parking.start()
+    print("Parking started")
+
     # coordinates from 0,0 to 10,10
-    coordinator = RegionalCoordinator(f"regional_coordinator1@{DEFAULT_HOST}", AGENT_PASSWORD, 0, 10, 0, 10)
+    coordinator = RegionalCoordinator(
+        f"regional_coordinator1@{DEFAULT_HOST}", AGENT_PASSWORD, 0, 10, 0, 10, parking_agents_jids=["parking100"]
+    )
     await coordinator.start()
     print("Regional Coordinator started")
 
