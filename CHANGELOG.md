@@ -4,7 +4,10 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 ### Added
-- Dumb ParkingAgent
+- Option to check parking spots from `time_start` to `time_stop`.
+
+### Changed
+- `ParkingAgent._available_parking_spots` is a list now - it represents next 24 hours of parking spots availability.
 
 
 ## [0.1.3] - 2024-12-01
