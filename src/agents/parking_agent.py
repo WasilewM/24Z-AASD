@@ -32,7 +32,7 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=10)  # Wait for a message for 10 seconds
             if msg:
                 print(f"Message received with content: {msg.body}")
-                check_parking_message = CheckParking(**json.loafs(msg.body))
+                check_parking_message = CheckParking(**json.loads(msg.body))
                 available_spots = self.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
