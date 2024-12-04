@@ -5,7 +5,7 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from constants import DEFAULT_HOST
+from constants import DEFAULT_HOST, PARKING_AGENT_MESSAGE_TIMEOUT
 from messages.check_parking import CheckParking
 
 
@@ -29,7 +29,7 @@ class ParkingAgent(Agent):
 
         async def run(self):
             print("Waiting for incoming messages...")
-            msg = await self.receive(timeout=10)  # Wait for a message for 10 seconds
+            msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 print(f"Message received with content: {msg.body}")
                 check_parking_message = CheckParking(**json.loads(msg.body))
