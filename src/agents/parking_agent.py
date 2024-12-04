@@ -15,7 +15,7 @@ class ParkingAgent(Agent):
         self._x = x
         self._y = y
         self._parking_spots = parking_spots
-        self._available_parking_spots = [parking_spots for _ in range(24)]  # assuming 24h time period with 1h intervals
+        self._available_parking_spots = [parking_spots for _ in range(24)]  # a list with number of free/available spots at a given hour
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
