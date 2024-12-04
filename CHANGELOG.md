@@ -2,6 +2,16 @@
 
 Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4] - TBD
+
+### Added
+
+- `User` agent with main methods for creating and modifying a reservation
+
+### Changed
+
+- `reservation_id` attribute to `ReservationResponse` message
+
 ## [0.1.3] - 2024-12-01
 
 ### Changed
@@ -30,4 +40,4 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
   ```python
   message_body=NazwaKlasy(**json.loads(message.body))
-
+  ```

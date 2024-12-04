@@ -1,6 +1,7 @@
 import spade
 
 from agents.coordinator_agent import RegionalCoordinator
+from agents.user_agent import User
 from constants import DEFAULT_HOST
 
 AGENT_PASSWORD = "admin"
@@ -26,6 +27,14 @@ async def main():
     coordinator = RegionalCoordinator(f"regional_coordinator4@{DEFAULT_HOST}", AGENT_PASSWORD, 10, 20, 10, 20)
     await coordinator.start()
     print("Regional Coordinator started")
+
+    user = User(f"user1@{DEFAULT_HOST}", AGENT_PASSWORD)
+    await user.start()
+    print("User1 started")
+
+    user = User(f"user2@{DEFAULT_HOST}", AGENT_PASSWORD)
+    await user.start()
+    print("User2 started")
 
 
 if __name__ == "__main__":
