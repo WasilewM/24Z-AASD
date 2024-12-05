@@ -15,7 +15,9 @@ class ParkingAgent(Agent):
         self._x = x
         self._y = y
         self._parking_spots = parking_spots
-        self._available_parking_spots = [parking_spots for _ in range(24)]  # a list with number of free/available spots at a given hour
+        self._available_parking_spots = [
+            parking_spots for _ in range(24)
+        ]  # a list with number of free/available spots at a given hour
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
@@ -37,9 +39,9 @@ class ParkingAgent(Agent):
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
                 reply = Message(
-                    to=f"{msg.thread}",
+                    to=msg.sender,
                     body=available_spots,
-                    thread=f"{self.jid}@{DEFAULT_HOST}",
+                    thread=msg.thread,
                     metadata={"performative": "inform", "action": "check-parking"},
                 )
                 await self.send(reply)
