@@ -12,6 +12,7 @@ from messages.check_parking import CheckParking
 from messages.parking_availability import ParkingAvailable
 from messages.reservation_request import RequestReservation
 from messages.response import ReservationResponse
+from messages.modify_reservation import ModifyReservation
 
 
 class ParkingAgent(Agent):
@@ -36,6 +37,13 @@ class ParkingAgent(Agent):
         template.to = f"{self.jid}@{DEFAULT_HOST}"
         template.set_metadata("performative", "inform")
         template.set_metadata("inform", "make-reservation")
+        return template
+
+    def _prepare_modify_reservation_template(self):
+        template = Template()
+        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.set_metadata("performative", "inform")
+        template.set_metadata("inform", "modify-reservation")
         return template
 
     class CheckParkingSpots(CyclicBehaviour):
@@ -106,6 +114,28 @@ class ParkingAgent(Agent):
         def generate_reservation_id(length=12):
             return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
+    class ModifyReservation(CyclicBehaviour):
+        """Behaviour for answering reservation modification requests"""
+
+        async def run(self):
+            msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
+            if msg:
+                request = ModifyReservation(**json.loads(msg.body))
+                # @TODO implement logic and parking spots checking for modification requests
+                reservation_status = random.choice([True, False])
+
+                reply_body = ReservationResponse(reservation_status, request.user_id, request.reservation_id)
+                reply = Message(
+                    to=msg.sender,
+                    body=str(reply_body.dict()),
+                    thread=msg.thread,
+                    metadata={"performative": "inform", "action": "modify-reservation"},
+                )
+                await self.send(reply)
+                print(f"Reply sent: {reply}")
+            else:
+                print("No message received within the timeout period")
+
     async def setup(self):
         check_parking_spots_behaviour = self.CheckParkingSpots()
         check_parking_spots_template = self._prepare_check_parking_spots_template()
@@ -113,5 +143,9 @@ class ParkingAgent(Agent):
         make_reservation_behaviour = self.MakeReservation()
         make_reservation_template = self._prepare_make_reservation_template()
 
+        modify_reservation_behaviour = self.ModifyReservation()
+        modify_reservation_template = self._prepare_modify_reservation_template()
+
         self.add_behaviour(check_parking_spots_behaviour, check_parking_spots_template)
         self.add_behaviour(make_reservation_behaviour, make_reservation_template)
+        self.add_behaviour(modify_reservation_behaviour, modify_reservation_template)

@@ -9,7 +9,8 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.5] - 2024.12.10
 ### Added
 - Option to check parking spots from `time_start` to `time_stop`.
-- Option to make a parking spot reservation
+- Option to make a parking spot reservation.
+- Dumb modification requests handling - random answers `True` or `False`.
 
 ### Changed
 - `ParkingAgent._available_parking_spots` is a list now - it represents next 24 hours of parking spots availability.
