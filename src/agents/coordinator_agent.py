@@ -89,21 +89,21 @@ class RegionalCoordinator(Agent):
             )
 
         async def run(self):
-            # msg = await self.receive(timeout=MESSAGE_TIMEOUT)
-            msg = Message(
-                to="regionalcoordinator1@{DEFAULT_HOST}",
-                body=json.dumps(CheckOffers(0, 1, 0, 1).dict()),
-                thread="user1@{DEFAULT_HOST}",
-                metadata={"performative": "query-ref", "action": "check-parking"},
-            )
+            msg = await self.receive(timeout=MESSAGE_TIMEOUT)
+            # for tests only :
+            # msg = Message(
+            #     to="regionalcoordinator1@{DEFAULT_HOST}",
+            #     body=json.dumps(CheckOffers(0, 1, 0, 1).dict()),
+            #     thread="user1@{DEFAULT_HOST}",
+            #     metadata={"performative": "query-ref", "action": "check-parking"},
+            # )
             if msg:
                 check_offers_message = CheckOffers(**json.loads(msg.body))
                 if self._check_if_request_is_within_region(int(check_offers_message.x), int(check_offers_message.y)):
-                    # commented to simplify tests
-                    # self.agent._per_user_data[check_offers_message.sender] = {
-                    #     "parkings": [],
-                    #     "destination": (check_offers_message.x, check_offers_message.y),
-                    # }
+                    self.agent._per_user_data[check_offers_message.sender] = {
+                        "parkings": [],
+                        "destination": (check_offers_message.x, check_offers_message.y),
+                    }
                     check_parking = str(
                         CheckParking(check_offers_message.time_start, check_offers_message.time_stop).dict()
                     )

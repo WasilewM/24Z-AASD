@@ -7,6 +7,7 @@ from spade.template import Template
 
 from constants import DEFAULT_HOST, PARKING_AGENT_MESSAGE_TIMEOUT
 from messages.check_parking import CheckParking
+from messages.parking_availability import ParkingAvailable
 
 
 class ParkingAgent(Agent):
@@ -30,17 +31,16 @@ class ParkingAgent(Agent):
         """Behaviour for answering requests for parking spots"""
 
         async def run(self):
-            print("Waiting for incoming messages...")
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                print(f"Message received with content: {msg.body}")
                 check_parking_message = CheckParking(**json.loads(msg.body))
                 available_spots = self.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
+                reply_body = ParkingAvailable(self.jid, 40, self._x, self._y, True if available_spots else False)
                 reply = Message(
                     to=msg.sender,
-                    body=available_spots,
+                    body=str(reply_body.dict()),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "check-parking"},
                 )
