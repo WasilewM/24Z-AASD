@@ -1,15 +1,16 @@
+import calendar
 import json
+import time
+from dataclasses import dataclass
 from typing import List
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from dataclasses import dataclass
-import calendar
-import time
-
 from constants import DEFAULT_HOST, MESSAGE_TIMEOUT
+from logger import logger
 from messages.check_offers import CheckOffers
 from messages.consolidated_offers import ConsolidatedOffers
 from messages.modify_reservation import ModifyReservation
@@ -18,16 +19,20 @@ from messages.response import ReservationResponse
 
 
 class User(Agent):
-    def __init__(self, jid, password):
+    def __init__(self, jid, password, coordinators_jids=[]):
         super().__init__(jid, password)
-        self.coordinators_jids = None
+        self.coordinators_jids = coordinators_jids
         self.pending_reservation = None
         # dictionary of active reservations {reservation_id: Reservation}
         self.active_reservations = {}
 
     def _validate_timeslot(self, time_start, time_stop):
-        current_time = calendar.timegm(time.gmtime())  # Get current timestamp in UTC timezone
-        if not (time_start < time_stop and time_start > current_time):
+        # current_time = calendar.timegm(time.gmtime())  # Get current timestamp in UTC timezone
+        # if not (time_start < time_stop and time_start > current_time):
+        #     raise ValueError("Invalid timeslot")
+        if not (time_start < time_stop):
+            raise ValueError("Invalid timeslot")
+        if time_start < 0 or time_stop > 24:
             raise ValueError("Invalid timeslot")
 
     def _validate_location(self, x, y):
@@ -67,7 +72,9 @@ class User(Agent):
                 body=json.dumps(check_offers_msg.dict()),
                 metadata={"performative": "query-ref", "action": "check-offers"},
             )
-            await self.send(to_send)
+            aioxmpp_msg = to_send.prepare()
+            await self.client.send(aioxmpp_msg)
+        logger.info(f"Check offers message sent to coordinators: {self.coordinators_jids}")
 
     async def request_reservation_modification(self, reservation_id, time_start, time_stop):
         self._validate_timeslot(time_start, time_stop)
@@ -78,12 +85,14 @@ class User(Agent):
             modify_reservation_msg = ModifyReservation(
                 reservation_id=reservation_id, time_start=time_start, time_stop=time_stop, user_id=self.jid
             )
+            # TODO critical: message.to should be correct regional coordinator
             to_send = Message(
                 to=f"{self.jid}@{DEFAULT_HOST}",
                 body=json.dumps(modify_reservation_msg.dict()),
                 metadata={"performative": "request", "action": "modify-reservation"},
             )
             await self.send(to_send)
+            logger.info(f"Modify reservation message sent: {str(modify_reservation_msg.dict())}")
         else:
             raise Exception("Reservation not found")
 
@@ -111,6 +120,7 @@ class User(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 consolidated_offers = ConsolidatedOffers(**json.loads(msg.body))
+                logger.info(f"Received ConsolidatedOffers from {msg.sender}: {str(consolidated_offers.dict())}")
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:
                     self.agent.pending_reservation.parking_id = chosen_parking_id
@@ -124,6 +134,8 @@ class User(Agent):
                         metadata={"performative": "request", "action": "make-reservation"},
                     )
                     await self.send(to_send)
+                    logger.info(
+                        f"Reservation request to {consolidated_offers.sender} sent: {str(reservation_request.dict())}")
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation confirmation"""
@@ -132,11 +144,13 @@ class User(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse(**json.loads(msg.body))
+                logger.info(f"Received ReservationResponse: {str(reservation_response.dict())}")
                 if reservation_response.success:
                     self.agent.save_reservation(reservation_response)
+                    logger.info(f"Reservation successful. Reservation id: {reservation_response.reservation_id}")
                 else:
                     # TODO Implement reservation failue handling
-                    print("Reservation failed.")
+                    logger.error("Reservation failed.")
 
     async def setup(self):
 

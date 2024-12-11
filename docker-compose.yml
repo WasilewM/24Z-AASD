@@ -15,9 +15,11 @@ services:
             - ./tigase/config/config.tdsl:/home/tigase/tigase-server/etc/config.tdsl
 
     spade_hello:
-        image: spade_hello:0.1.5
+        image: spade_hello:latest
         build:
             context: .
+        depends_on:
+            - server_hello
         deploy:
             resources:
                 limits:

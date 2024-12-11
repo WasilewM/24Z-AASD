@@ -1,18 +1,19 @@
-import spade
-import string
 import json
 import random
+import string
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
 from constants import DEFAULT_HOST, PARKING_AGENT_MESSAGE_TIMEOUT
+from logger import logger
 from messages.check_parking import CheckParking
+from messages.modify_reservation import ModifyReservation
 from messages.parking_availability import ParkingAvailable
 from messages.reservation_request import RequestReservation
 from messages.response import ReservationResponse
-from messages.modify_reservation import ModifyReservation
 
 
 class ParkingAgent(Agent):
@@ -54,10 +55,12 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 check_parking_message = CheckParking(**json.loads(msg.body))
+                logger.info(f"Received CheckParking message: {str(check_parking_message.dict())}")
                 available_spots = self.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(self.jid, self._parking_price, self._x, self._y, True if available_spots else False)
+                reply_body = ParkingAvailable(self.jid, self._parking_price, self._x,
+                                              self._y, True if available_spots else False)
                 reply = Message(
                     to=msg.sender,
                     body=str(reply_body.dict()),
@@ -65,15 +68,12 @@ class ParkingAgent(Agent):
                     metadata={"performative": "inform", "action": "check-parking"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
+                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
         def get_available_parking_spots(self, time_start, time_stop):
             max_available = self._parking_spots
             for i in range(time_start, time_stop):
                 max_available = min(max_available, self._available_parking_spots[i])
-
             return max_available
 
     class MakeReservation(CyclicBehaviour):
@@ -83,6 +83,7 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 request = RequestReservation(**json.loads(msg.body))
+                logger.info(f"Received RequestReservation: {str(request.dict())}")
                 reservation_status = self.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                 reservation_id = self.generate_reservation_id() if reservation_status else ""
 
@@ -94,9 +95,7 @@ class ParkingAgent(Agent):
                     metadata={"performative": "inform", "action": "make-reservation"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
+                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
         def try_to_resere_parking_spot(self, time_start, time_stop):
             if self.get_available_parking_spots(time_start, time_stop):
@@ -123,6 +122,7 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 request = ModifyReservation(**json.loads(msg.body))
+                logger.info(f"Received ModifyReservation: {str(request.dict())}")
                 # @TODO implement logic and parking spots checking for modification requests
                 # @TODO check current reservation id from the message and compare it with already requested reservations
                 reservation_status = random.choice([True, False])
@@ -135,9 +135,7 @@ class ParkingAgent(Agent):
                     metadata={"performative": "inform", "action": "modify-reservation"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
+                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
     async def setup(self):
         check_parking_spots_behaviour = self.CheckParkingSpots()
