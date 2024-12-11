@@ -16,7 +16,7 @@ from messages.modify_reservation import ModifyReservation
 
 
 class ParkingAgent(Agent):
-    def __init__(self, jid, password, x, y, parking_spots):
+    def __init__(self, jid, password, x, y, parking_spots, parking_price=40):
         super().__init__(jid, password)
         self._x = x
         self._y = y
@@ -24,6 +24,7 @@ class ParkingAgent(Agent):
         self._available_parking_spots = [
             parking_spots for _ in range(24)
         ]  # a list with number of free/available spots at a given hour
+        self._parking_price = parking_price
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
@@ -56,7 +57,7 @@ class ParkingAgent(Agent):
                 available_spots = self.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(self.jid, 40, self._x, self._y, True if available_spots else False)
+                reply_body = ParkingAvailable(self.jid, self._parking_price, self._x, self._y, True if available_spots else False)
                 reply = Message(
                     to=msg.sender,
                     body=str(reply_body.dict()),
@@ -112,6 +113,7 @@ class ParkingAgent(Agent):
             return max_available
 
         def generate_reservation_id(length=12):
+            # @TODO make some kind of hash based on the time and user id
             return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
     class ModifyReservation(CyclicBehaviour):
@@ -122,6 +124,7 @@ class ParkingAgent(Agent):
             if msg:
                 request = ModifyReservation(**json.loads(msg.body))
                 # @TODO implement logic and parking spots checking for modification requests
+                # @TODO check current reservation id from the message and compare it with already requested reservations
                 reservation_status = random.choice([True, False])
 
                 reply_body = ReservationResponse(reservation_status, request.user_id, request.reservation_id)
