@@ -7,7 +7,7 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from constants import DEFAULT_HOST, PARKING_AGENT_MESSAGE_TIMEOUT
+from constants import PARKING_AGENT_MESSAGE_TIMEOUT
 from logger import logger
 from messages.check_parking import CheckParking
 from messages.modify_reservation import ModifyReservation
@@ -29,24 +29,48 @@ class ParkingAgent(Agent):
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "parking-availability")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "query-ref")
+        template.set_metadata("action", "check-parking")
         return template
 
     def _prepare_make_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "make-reservation")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "request")
+        template.set_metadata("action", "make-reservation")
         return template
 
     def _prepare_modify_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "modify-reservation")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "request")
+        template.set_metadata("action", "modify-reservation")
         return template
+
+    def get_available_parking_spots(self, time_start, time_stop):
+        max_available = self._parking_spots
+        for i in range(time_start, time_stop):
+            max_available = min(max_available, self._available_parking_spots[i])
+        return max_available
+
+    def try_to_resere_parking_spot(self, time_start, time_stop):
+        if self.get_available_parking_spots(time_start, time_stop):
+            for i in range(time_start, time_stop):
+                self._available_parking_spots[i] -= 1
+            return True
+        return False
+
+    def get_available_parking_spots(self, time_start, time_stop):
+        max_available = self._parking_spots
+        for i in range(time_start, time_stop):
+            max_available = min(max_available, self._available_parking_spots[i])
+
+        return max_available
+
+    def generate_reservation_id(length=12):
+        # @TODO make some kind of hash based on the time and user id
+        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
     class CheckParkingSpots(CyclicBehaviour):
         """Behaviour for answering requests for parking spots"""
@@ -56,7 +80,7 @@ class ParkingAgent(Agent):
             if msg:
                 check_parking_message = CheckParking(**json.loads(msg.body))
                 logger.info(f"Received CheckParking message: {str(check_parking_message.dict())}")
-                available_spots = self.get_available_parking_spots(
+                available_spots = self.agent.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
                 reply_body = ParkingAvailable(self.jid, self._parking_price, self._x,
@@ -65,16 +89,10 @@ class ParkingAgent(Agent):
                     to=msg.sender,
                     body=str(reply_body.dict()),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "check-parking"},
+                    metadata={"performative": "inform", "action": "parking-availability"},
                 )
                 await self.send(reply)
                 logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
-
-        def get_available_parking_spots(self, time_start, time_stop):
-            max_available = self._parking_spots
-            for i in range(time_start, time_stop):
-                max_available = min(max_available, self._available_parking_spots[i])
-            return max_available
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for answering reservation requests"""
@@ -84,36 +102,18 @@ class ParkingAgent(Agent):
             if msg:
                 request = RequestReservation(**json.loads(msg.body))
                 logger.info(f"Received RequestReservation: {str(request.dict())}")
-                reservation_status = self.try_to_reserve_parking_spot(request.time_start, request.time_stop)
-                reservation_id = self.generate_reservation_id() if reservation_status else ""
+                reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
+                reservation_id = self.agent.generate_reservation_id() if reservation_status else ""
 
                 reply_body = ReservationResponse(reservation_status, request.user_id, reservation_id)
                 reply = Message(
                     to=msg.sender,
                     body=str(reply_body.dict()),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "make-reservation"},
+                    metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
                 logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
-
-        def try_to_resere_parking_spot(self, time_start, time_stop):
-            if self.get_available_parking_spots(time_start, time_stop):
-                for i in range(time_start, time_stop):
-                    self._available_parking_spots[i] -= 1
-                return True
-            return False
-
-        def get_available_parking_spots(self, time_start, time_stop):
-            max_available = self._parking_spots
-            for i in range(time_start, time_stop):
-                max_available = min(max_available, self._available_parking_spots[i])
-
-            return max_available
-
-        def generate_reservation_id(length=12):
-            # @TODO make some kind of hash based on the time and user id
-            return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for answering reservation modification requests"""
@@ -132,7 +132,7 @@ class ParkingAgent(Agent):
                     to=msg.sender,
                     body=str(reply_body.dict()),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "modify-reservation"},
+                    metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
                 logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")

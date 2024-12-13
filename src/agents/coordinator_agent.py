@@ -5,7 +5,8 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from constants import DEFAULT_HOST, MESSAGE_TIMEOUT, OFFERS_TO_RETURN
+from constants import MESSAGE_TIMEOUT, OFFERS_TO_RETURN
+from logger import logger
 from messages.check_offers import CheckOffers
 from messages.check_parking import CheckParking
 from messages.consolidated_offers import ConsolidatedOffers, Offer
@@ -28,35 +29,35 @@ class RegionalCoordinator(Agent):
 
     def _prepare_check_offers_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "query-ref")
         template.set_metadata("action", "check-offers")
         return template
 
     def _prepare_make_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "request")
         template.set_metadata("action", "make-reservation")
         return template
 
     def _prepare_modify_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "request")
         template.set_metadata("action", "modify-reservation")
         return template
 
     def _prepare_parking_availability_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "inform")
         template.set_metadata("action", "parking-availability")
         return template
 
     def _prepare_reservation_response_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "inform")
         template.set_metadata("action", "reservation-response")
         return template
@@ -90,33 +91,27 @@ class RegionalCoordinator(Agent):
 
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
-            # for tests only :
-            # msg = Message(
-            #     to="regionalcoordinator1@{DEFAULT_HOST}",
-            #     body=json.dumps(CheckOffers(0, 1, 0, 1).dict()),
-            #     thread="user1@{DEFAULT_HOST}",
-            #     metadata={"performative": "query-ref", "action": "check-parking"},
-            # )
             if msg:
                 check_offers_message = CheckOffers(**json.loads(msg.body))
                 if self._check_if_request_is_within_region(int(check_offers_message.x), int(check_offers_message.y)):
-                    self.agent._per_user_data[check_offers_message.sender] = {
+                    logger.info(f"CheckOffers message received from {msg.sender}")
+                    self.agent._per_user_data[msg.sender] = {
                         "parkings": [],
                         "destination": (check_offers_message.x, check_offers_message.y),
                     }
-                    check_parking = str(
-                        CheckParking(check_offers_message.time_start, check_offers_message.time_stop).dict()
-                    )
+                    check_parking = json.dumps(CheckParking(check_offers_message.time_start,
+                                               check_offers_message.time_stop).dict())
                     for jid in self.agent._parking_agents_jids:
                         print(f"Sending to jid: {jid}")
                         # user_jid@host in message.thread, need in response from parking agent
                         to_send = Message(
                             to=jid,
                             body=check_parking,
-                            thread=check_offers_message.sender,
+                            thread=f"{msg.sender}",
                             metadata={"performative": "query-ref", "action": "check-parking"},
                         )
                         await self.send(to_send)
+                        logger.info(f"CheckParking message sent to {to_send.to}")
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for making reservation"""
@@ -125,12 +120,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_request = RequestReservation(**json.loads(msg.body))
+                logger.info(f"RequestReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=reservation_request.parking_id,
                     body=msg.body,
                     metadata={"performative": "request", "action": "make-reservation"},
                 )
                 await self.send(request_to_parking)
+                logger.info(f"RequestReservation sent to {request_to_parking.to}")
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for modifying reservation"""
@@ -139,12 +136,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 modification_request = ModifyReservation(**json.loads(msg.body))
+                logger.info(f"ModifyReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=modification_request.parking_id,
                     body=msg.body,
                     metadata={"performative": "request", "action": "modify-reservation"},
                 )
                 await self.send(request_to_parking)
+                logger.info(f"ModifyReservation sent to {request_to_parking.to}")
 
     class AwaitParkingAvailability(CyclicBehaviour):
         """Behaviour for waiting for parking availability, when all parkings are checked
@@ -154,10 +153,12 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 parking_available = ParkingAvailable(**json.loads(msg.body))
+                logger.info(f"ParkingAvailable received from {msg.sender}")
                 user = msg.thread
                 self.agent._per_user_data[user]["parkings"].append(parking_available)
 
                 if len(self.agent._per_user_data[user]["parkings"]) == len(self.agent._parking_agents_jids):
+                    logger.info("All parkings Data received.")
                     consolidated_offers = self.agent._consolidate_offers_per_user(user)
                     consolidated_offers = str(consolidated_offers.dict())
                     self.agent._per_user_data.pop(user)
@@ -167,6 +168,7 @@ class RegionalCoordinator(Agent):
                         metadata={"performative": "inform", "action": "consolidated-offers"},
                     )
                     await self.send(to_send)
+                    logger.info(f"ConsolidatedOffers sent to {to_send.to}")
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation making or changing confirmation"""
@@ -175,12 +177,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse(**json.loads(msg.body))
+                logger.info(f"ReservationResponse received from {msg.sender}")
                 to_send = Message(
                     to=reservation_response.user_id,
                     body=msg.body,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(to_send)
+                logger.info(f"ReservationResponse sent to {to_send.to}")
 
     async def setup(self):
         check_offers_behaviour = self.CheckParkingOffers()

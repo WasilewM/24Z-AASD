@@ -10,5 +10,5 @@ class CheckOffers(BaseMessage):
 
     x: int
     y: int
-    time_start: int  # assume timestamp
-    time_stop: int  # assume timestamp
+    time_start: int
+    time_stop: int

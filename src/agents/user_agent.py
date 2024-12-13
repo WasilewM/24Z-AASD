@@ -41,14 +41,14 @@ class User(Agent):
 
     def _prepare_consolidated_offers_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "inform")
         template.set_metadata("action", "consolidated-offers")
         return template
 
     def _prepare_reservation_response_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
+        template.to = f"{self.jid}"
         template.set_metadata("performative", "inform")
         template.set_metadata("action", "reservation-response")
         return template

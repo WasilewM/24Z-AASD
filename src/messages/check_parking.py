@@ -7,5 +7,5 @@ from messages.base import BaseMessage
 class CheckParking(BaseMessage):
     """Message to check parking availability in specified time slot"""
 
-    time_start: int  # assume timestamp
-    time_stop: int  # assume timestamp
+    time_start: int
+    time_stop: int

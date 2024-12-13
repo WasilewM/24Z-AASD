@@ -47,6 +47,7 @@ async def main():
     time.sleep(5)
     logger.info("SIMPLE CASE STARTED")
     user1.submit(user1.request_parking_offers(5, 5, 8, 16))
+    await spade.wait_until_finished([parking1, coordinator1, user1])
 
 
 if __name__ == "__main__":
