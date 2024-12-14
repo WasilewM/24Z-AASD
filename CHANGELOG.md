@@ -16,12 +16,12 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 - Modifying reservation in Parking Agent.
 - Improved logging
+- Coordinator_id in User's Reservation
 
 ### Fixed
 
 - Message receivers in all agents.
 - Message encoding and decoding.
-
 
 ## [0.1.5] - 2024.12.10
 
