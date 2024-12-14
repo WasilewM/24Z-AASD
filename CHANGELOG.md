@@ -4,6 +4,19 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2024.12.14
+
+### Added
+
+- Modifying reservation in Parking Agent.
+- Improved logging
+
+### Fixed
+
+- Message receivers in all agents.
+- Message encoding and decoding.
+
+
 ## [0.1.5] - 2024.12.10
 
 ### Added

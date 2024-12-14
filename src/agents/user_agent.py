@@ -12,7 +12,7 @@ from spade.template import Template
 from constants import DEFAULT_HOST, MESSAGE_TIMEOUT
 from logger import logger
 from messages.check_offers import CheckOffers
-from messages.consolidated_offers import ConsolidatedOffers
+from messages.consolidated_offers import ConsolidatedOffers, Offer
 from messages.modify_reservation import ModifyReservation
 from messages.reservation_request import RequestReservation
 from messages.response import ReservationResponse
@@ -120,6 +120,8 @@ class User(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 consolidated_offers = ConsolidatedOffers(**json.loads(msg.body))
+                for i, offer in enumerate(consolidated_offers.offers):
+                    consolidated_offers.offers[i] = Offer(**json.loads(str(offer)))
                 logger.info(f"Received ConsolidatedOffers from {msg.sender}: {str(consolidated_offers.dict())}")
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:

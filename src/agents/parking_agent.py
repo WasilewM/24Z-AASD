@@ -1,6 +1,7 @@
 import json
 import random
 import string
+import uuid
 
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
@@ -26,6 +27,7 @@ class ParkingAgent(Agent):
             parking_spots for _ in range(24)
         ]  # a list with number of free/available spots at a given hour
         self._parking_price = parking_price
+        self._users_reservations = {}  # {user_jid: {reservation_id: [time_start, time_stop]}}
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
@@ -54,7 +56,7 @@ class ParkingAgent(Agent):
             max_available = min(max_available, self._available_parking_spots[i])
         return max_available
 
-    def try_to_resere_parking_spot(self, time_start, time_stop):
+    def try_to_reserve_parking_spot(self, time_start, time_stop):
         if self.get_available_parking_spots(time_start, time_stop):
             for i in range(time_start, time_stop):
                 self._available_parking_spots[i] -= 1
@@ -68,9 +70,21 @@ class ParkingAgent(Agent):
 
         return max_available
 
-    def generate_reservation_id(length=12):
-        # @TODO make some kind of hash based on the time and user id
-        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+    def free_parking_spots(self, time_start, time_stop):
+        for i in range(time_start, time_stop):
+            self._available_parking_spots[i] += 1
+
+    def generate_reservation_id(self, user_jid):
+        res_id = uuid.uuid5(uuid.NAMESPACE_DNS, user_jid)
+        return str(res_id)
+
+    def store_parking_info_for_user(self, user_jid, reservation_id, time_start, time_stop):
+        if user_jid not in self._users_reservations:
+            self._users_reservations[user_jid] = {}
+        self._users_reservations[user_jid][reservation_id] = [time_start, time_stop]
+
+    def user_is_reservation_owner(self, user_jid, reservation_id):
+        return True if reservation_id in self._users_reservations.get(user_jid, []) else False
 
     class CheckParkingSpots(CyclicBehaviour):
         """Behaviour for answering requests for parking spots"""
@@ -79,20 +93,20 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 check_parking_message = CheckParking(**json.loads(msg.body))
-                logger.info(f"Received CheckParking message: {str(check_parking_message.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Received CheckParking message: {str(check_parking_message.dict())}")
                 available_spots = self.agent.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(self.jid, self._parking_price, self._x,
-                                              self._y, True if available_spots else False)
+                reply_body = ParkingAvailable(str(self.agent.jid), self.agent._parking_price, self.agent._x,
+                                              self.agent._y, True if available_spots else False)
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=json.dumps(reply_body.dict()),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "parking-availability"},
                 )
                 await self.send(reply)
-                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for answering reservation requests"""
@@ -101,19 +115,21 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 request = RequestReservation(**json.loads(msg.body))
-                logger.info(f"Received RequestReservation: {str(request.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Received RequestReservation: {str(request.dict())}")
                 reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
-                reservation_id = self.agent.generate_reservation_id() if reservation_status else ""
+                reservation_id = self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
+                self.agent.store_parking_info_for_user(
+                    request.user_id, reservation_id, request.time_start, request.time_stop)
 
                 reply_body = ReservationResponse(reservation_status, request.user_id, reservation_id)
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=json.dumps(reply_body.dict()),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for answering reservation modification requests"""
@@ -122,20 +138,25 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 request = ModifyReservation(**json.loads(msg.body))
-                logger.info(f"Received ModifyReservation: {str(request.dict())}")
-                # @TODO implement logic and parking spots checking for modification requests
-                # @TODO check current reservation id from the message and compare it with already requested reservations
-                reservation_status = random.choice([True, False])
+                logger.info(f"{str(self.agent.jid)}: Received ModifyReservation: {str(request.dict())}")
+                if not self.agent.user_is_reservation_owner(request.user_id, request.reservation_id):
+                    reservation_status = False
+                else:
+                    reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
+                    if reservation_status:
+                        self.agent.store_parking_info_for_user(
+                            request.user_id, request.reservation_id, request.time_start, request.time_stop)
+                        self.agent.free_parking_spots(request.time_start, request.time_stop)
 
                 reply_body = ReservationResponse(reservation_status, request.user_id, request.reservation_id)
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=json.dumps(reply_body.dict()),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                logger.info(f"Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
 
     async def setup(self):
         check_parking_spots_behaviour = self.CheckParkingSpots()

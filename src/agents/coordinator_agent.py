@@ -63,7 +63,7 @@ class RegionalCoordinator(Agent):
         return template
 
     def _calculate_distance(self, x_user, y_user, x_parking, y_parking):
-        return ((x_user - x_parking) ** 2 + (y_user - y_parking) ** 2) ** 0.5
+        return round(((x_user - x_parking) ** 2 + (y_user - y_parking) ** 2) ** 0.5, 2)
 
     def _consolidate_offers_per_user(self, user) -> ConsolidatedOffers:
         dest_x, dest_y = self._per_user_data[user]["destination"]
@@ -94,8 +94,9 @@ class RegionalCoordinator(Agent):
             if msg:
                 check_offers_message = CheckOffers(**json.loads(msg.body))
                 if self._check_if_request_is_within_region(int(check_offers_message.x), int(check_offers_message.y)):
-                    logger.info(f"CheckOffers message received from {msg.sender}")
-                    self.agent._per_user_data[msg.sender] = {
+                    user_id = str(msg.sender).split("/")[0]
+                    logger.info(f"{str(self.agent.jid)}: CheckOffers message received from {user_id}")
+                    self.agent._per_user_data[str(user_id)] = {
                         "parkings": [],
                         "destination": (check_offers_message.x, check_offers_message.y),
                     }
@@ -107,11 +108,11 @@ class RegionalCoordinator(Agent):
                         to_send = Message(
                             to=jid,
                             body=check_parking,
-                            thread=f"{msg.sender}",
+                            thread=f"{user_id}",
                             metadata={"performative": "query-ref", "action": "check-parking"},
                         )
                         await self.send(to_send)
-                        logger.info(f"CheckParking message sent to {to_send.to}")
+                        logger.info(f"{str(self.agent.jid)}: CheckParking message sent to {to_send.to}")
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for making reservation"""
@@ -120,14 +121,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_request = RequestReservation(**json.loads(msg.body))
-                logger.info(f"RequestReservation received from {msg.sender}")
+                logger.info(f"{str(self.agent.jid)}: RequestReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=reservation_request.parking_id,
                     body=msg.body,
                     metadata={"performative": "request", "action": "make-reservation"},
                 )
                 await self.send(request_to_parking)
-                logger.info(f"RequestReservation sent to {request_to_parking.to}")
+                logger.info(f"{str(self.agent.jid)}: RequestReservation sent to {request_to_parking.to}")
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for modifying reservation"""
@@ -136,14 +137,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 modification_request = ModifyReservation(**json.loads(msg.body))
-                logger.info(f"ModifyReservation received from {msg.sender}")
+                logger.info(f"{str(self.agent.jid)}: ModifyReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=modification_request.parking_id,
                     body=msg.body,
                     metadata={"performative": "request", "action": "modify-reservation"},
                 )
                 await self.send(request_to_parking)
-                logger.info(f"ModifyReservation sent to {request_to_parking.to}")
+                logger.info(f"{str(self.agent.jid)}: ModifyReservation sent to {request_to_parking.to}")
 
     class AwaitParkingAvailability(CyclicBehaviour):
         """Behaviour for waiting for parking availability, when all parkings are checked
@@ -153,14 +154,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 parking_available = ParkingAvailable(**json.loads(msg.body))
-                logger.info(f"ParkingAvailable received from {msg.sender}")
+                logger.info(f"{str(self.agent.jid)}: ParkingAvailable received from {msg.sender}")
                 user = msg.thread
                 self.agent._per_user_data[user]["parkings"].append(parking_available)
 
                 if len(self.agent._per_user_data[user]["parkings"]) == len(self.agent._parking_agents_jids):
-                    logger.info("All parkings Data received.")
+                    logger.info(f"{str(self.agent.jid)}: All parkings Data received.")
                     consolidated_offers = self.agent._consolidate_offers_per_user(user)
-                    consolidated_offers = str(consolidated_offers.dict())
+                    consolidated_offers = json.dumps(consolidated_offers.dict())
                     self.agent._per_user_data.pop(user)
                     to_send = Message(
                         to=user,
@@ -168,7 +169,7 @@ class RegionalCoordinator(Agent):
                         metadata={"performative": "inform", "action": "consolidated-offers"},
                     )
                     await self.send(to_send)
-                    logger.info(f"ConsolidatedOffers sent to {to_send.to}")
+                    logger.info(f"{str(self.agent.jid)}: ConsolidatedOffers sent to {to_send.to}")
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation making or changing confirmation"""
@@ -177,14 +178,14 @@ class RegionalCoordinator(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse(**json.loads(msg.body))
-                logger.info(f"ReservationResponse received from {msg.sender}")
+                logger.info(f"{str(self.agent.jid)}: ReservationResponse received from {msg.sender}")
                 to_send = Message(
                     to=reservation_response.user_id,
                     body=msg.body,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(to_send)
-                logger.info(f"ReservationResponse sent to {to_send.to}")
+                logger.info(f"{str(self.agent.jid)}: ReservationResponse sent to {to_send.to}")
 
     async def setup(self):
         check_offers_behaviour = self.CheckParkingOffers()
