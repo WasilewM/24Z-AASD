@@ -92,21 +92,21 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                check_parking_message = CheckParking(**json.loads(msg.body))
-                logger.info(f"{str(self.agent.jid)}: Received CheckParking message: {str(check_parking_message.dict())}")
+                check_parking_message = CheckParking.model_validate_json(msg.body)
+                logger.info(f"{str(self.agent.jid)}: Received CheckParking message: {check_parking_message.model_dump_json()}")
                 available_spots = self.agent.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(str(self.agent.jid), self.agent._parking_price, self.agent._x,
-                                              self.agent._y, True if available_spots else False)
+                reply_body = ParkingAvailable(parking_id=str(self.agent.jid), parking_price=self.agent._parking_price, parking_x=self.agent._x,
+                                              parking_y=self.agent._y, available=True if available_spots else False)
                 reply = Message(
                     to=str(msg.sender),
-                    body=json.dumps(reply_body.dict()),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "parking-availability"},
                 )
                 await self.send(reply)
-                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for answering reservation requests"""
@@ -114,22 +114,23 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                request = RequestReservation(**json.loads(msg.body))
-                logger.info(f"{str(self.agent.jid)}: Received RequestReservation: {str(request.dict())}")
+                request = RequestReservation.model_validate_json(msg.body)
+                logger.info(f"{str(self.agent.jid)}: Received RequestReservation: {request.model_dump_json()}")
                 reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                 reservation_id = self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
                 self.agent.store_parking_info_for_user(
                     request.user_id, reservation_id, request.time_start, request.time_stop)
 
-                reply_body = ReservationResponse(reservation_status, request.user_id, reservation_id)
+                reply_body = ReservationResponse(success=reservation_status,
+                                                 user_id=request.user_id, reservation_id=reservation_id)
                 reply = Message(
                     to=str(msg.sender),
-                    body=json.dumps(reply_body.dict()),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for answering reservation modification requests"""
@@ -137,7 +138,7 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                request = ModifyReservation(**json.loads(msg.body))
+                request = ModifyReservation.model_validate_json(msg.body)
                 logger.info(f"{str(self.agent.jid)}: Received ModifyReservation: {str(request.dict())}")
                 if not self.agent.user_is_reservation_owner(request.user_id, request.reservation_id):
                     reservation_status = False
@@ -148,15 +149,16 @@ class ParkingAgent(Agent):
                             request.user_id, request.reservation_id, request.time_start, request.time_stop)
                         self.agent.free_parking_spots(request.time_start, request.time_stop)
 
-                reply_body = ReservationResponse(reservation_status, request.user_id, request.reservation_id)
+                reply_body = ReservationResponse(success=reservation_status,
+                                                 user_id=request.user_id, reservation_id=request.reservation_id)
                 reply = Message(
                     to=str(msg.sender),
-                    body=json.dumps(reply_body.dict()),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
                     metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {str(reply_body.dict())}")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     async def setup(self):
         check_parking_spots_behaviour = self.CheckParkingSpots()

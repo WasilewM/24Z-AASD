@@ -1,21 +1,15 @@
-from dataclasses import dataclass
 from typing import List
 
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class Offer(BaseMessage):
+class Offer(BaseModel):
     parking_id: str
     price: int
     distance: float
 
 
-@dataclass
-class ConsolidatedOffers(BaseMessage):
+class ConsolidatedOffers(BaseModel):
     """Message with best offers in respond to User's CheckOffers message"""
 
     offers: List[Offer]
-
-    def dict(self):
-        return {"offers": [offer.dict() for offer in self.offers]}

@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class RequestReservation(BaseMessage):
+class RequestReservation(BaseModel):
     """Message from User to RegionalCoordinator
     to request a reservation in specified time slot and parking"""
 

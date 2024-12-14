@@ -69,7 +69,7 @@ class User(Agent):
         for coordinator_jid in self.coordinators_jids:
             to_send = Message(
                 to=coordinator_jid,
-                body=json.dumps(check_offers_msg.dict()),
+                body=check_offers_msg.model_dump_json(),
                 metadata={"performative": "query-ref", "action": "check-offers"},
             )
             aioxmpp_msg = to_send.prepare()
@@ -83,33 +83,33 @@ class User(Agent):
             self.pending_reservation.time_start = time_start
             self.pending_reservation.time_stop = time_stop
             modify_reservation_msg = ModifyReservation(
-                reservation_id=reservation_id, time_start=time_start, time_stop=time_stop, user_id=self.jid
+                reservation_id=reservation_id, time_start=time_start, time_stop=time_stop, user_id=str(self.jid)
             )
             # TODO critical: message.to should be correct regional coordinator
             to_send = Message(
                 to=f"{self.jid}@{DEFAULT_HOST}",
-                body=json.dumps(modify_reservation_msg.dict()),
+                body=modify_reservation_msg.model_dump_json(),
                 metadata={"performative": "request", "action": "modify-reservation"},
             )
             await self.send(to_send)
-            logger.info(f"Modify reservation message sent: {str(modify_reservation_msg.dict())}")
+            logger.info(f"Modify reservation message sent: {modify_reservation_msg.model_dump_json()}")
         else:
             raise Exception("Reservation not found")
 
-    def choose_parking_offer(self, offers: List[dict]):
+    def choose_parking_offer(self, offers: List[Offer]):
         # TODO implement logic of choosing an offer
-        return offers[0]["parking_id"] if offers else None
+        return offers[0].parking_id if offers else None
 
     def save_reservation(self, reservation_response: ReservationResponse):
-        if not self.agent.pending_reservation:
+        if not self.pending_reservation:
             raise Exception("No pending reservation")
         # If reservation id is set -> there was a modification request
-        if self.agent.pending_reservation.id:
+        if self.pending_reservation.id:
             # The old reservation will be replaced by the new one with a new id
-            self.agent.active_reservations.pop(self.agent.pending_reservation.id)
-        self.agent.pending_reservation.id = reservation_response.reservation_id
-        self.agent.active_reservations[reservation_response.reservation_id] = self.agent.pending_reservation
-        self.agent.pending_reservation = None
+            self.active_reservations.pop(self.pending_reservation.id)
+        self.pending_reservation.id = reservation_response.reservation_id
+        self.active_reservations[reservation_response.reservation_id] = self.pending_reservation
+        self.pending_reservation = None
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for making a reservation
@@ -119,25 +119,25 @@ class User(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                consolidated_offers = ConsolidatedOffers(**json.loads(msg.body))
-                for i, offer in enumerate(consolidated_offers.offers):
-                    consolidated_offers.offers[i] = Offer(**json.loads(str(offer)))
-                logger.info(f"Received ConsolidatedOffers from {msg.sender}: {str(consolidated_offers.dict())}")
+                consolidated_offers = ConsolidatedOffers.model_validate_json(msg.body)
+                logger.info(
+                    f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}")
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:
                     self.agent.pending_reservation.parking_id = chosen_parking_id
                     res = self.agent.pending_reservation
                     reservation_request = RequestReservation(
-                        res.time_start, res.time_stop, chosen_parking_id, self.agent.jid
+                        time_start=res.time_start, time_stop=res.time_stop, parking_id=chosen_parking_id, user_id=str(
+                            self.agent.jid)
                     )
                     to_send = Message(
-                        to=consolidated_offers.sender,
-                        body=json.dumps(reservation_request.dict()),
+                        to=str(msg.sender),
+                        body=reservation_request.model_dump_json(),
                         metadata={"performative": "request", "action": "make-reservation"},
                     )
                     await self.send(to_send)
                     logger.info(
-                        f"Reservation request to {consolidated_offers.sender} sent: {str(reservation_request.dict())}")
+                        f"{str(self.agent.jid)}: Reservation request to {str(msg.sender)} sent: {reservation_request.model_dump_json()}")
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation confirmation"""
@@ -145,14 +145,15 @@ class User(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                reservation_response = ReservationResponse(**json.loads(msg.body))
-                logger.info(f"Received ReservationResponse: {str(reservation_response.dict())}")
+                reservation_response = ReservationResponse.model_validate_json(msg.body)
+                logger.info(f"{str(self.agent.jid)}: Received ReservationResponse: {reservation_response.model_dump_json()}")
                 if reservation_response.success:
                     self.agent.save_reservation(reservation_response)
-                    logger.info(f"Reservation successful. Reservation id: {reservation_response.reservation_id}")
+                    logger.info(
+                        f"{str(self.agent.jid)}: Reservation successful. Reservation id: {reservation_response.reservation_id}")
                 else:
                     # TODO Implement reservation failue handling
-                    logger.error("Reservation failed.")
+                    logger.error(f"{str(self.agent.jid)}: Reservation failed.")
 
     async def setup(self):
 

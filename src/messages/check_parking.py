@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class CheckParking(BaseMessage):
+class CheckParking(BaseModel):
     """Message to check parking availability in specified time slot"""
 
     time_start: int

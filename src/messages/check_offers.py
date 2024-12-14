@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class CheckOffers(BaseMessage):
+class CheckOffers(BaseModel):
     """Message from User to RegionalCoordinator
     to check offers for a given position and time range."""
 

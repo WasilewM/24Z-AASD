@@ -92,7 +92,7 @@ class RegionalCoordinator(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                check_offers_message = CheckOffers(**json.loads(msg.body))
+                check_offers_message = CheckOffers.model_validate_json(msg.body)
                 if self._check_if_request_is_within_region(int(check_offers_message.x), int(check_offers_message.y)):
                     user_id = str(msg.sender).split("/")[0]
                     logger.info(f"{str(self.agent.jid)}: CheckOffers message received from {user_id}")
@@ -100,8 +100,8 @@ class RegionalCoordinator(Agent):
                         "parkings": [],
                         "destination": (check_offers_message.x, check_offers_message.y),
                     }
-                    check_parking = json.dumps(CheckParking(check_offers_message.time_start,
-                                               check_offers_message.time_stop).dict())
+                    check_parking = CheckParking(time_start=check_offers_message.time_start,
+                                                 time_stop=check_offers_message.time_stop).model_dump_json()
                     for jid in self.agent._parking_agents_jids:
                         print(f"Sending to jid: {jid}")
                         # user_jid@host in message.thread, need in response from parking agent
@@ -120,7 +120,7 @@ class RegionalCoordinator(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                reservation_request = RequestReservation(**json.loads(msg.body))
+                reservation_request = RequestReservation.model_validate_json(msg.body)
                 logger.info(f"{str(self.agent.jid)}: RequestReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=reservation_request.parking_id,
@@ -136,7 +136,7 @@ class RegionalCoordinator(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                modification_request = ModifyReservation(**json.loads(msg.body))
+                modification_request = ModifyReservation.model_validate_json(msg.body)
                 logger.info(f"{str(self.agent.jid)}: ModifyReservation received from {msg.sender}")
                 request_to_parking = Message(
                     to=modification_request.parking_id,
@@ -153,7 +153,7 @@ class RegionalCoordinator(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                parking_available = ParkingAvailable(**json.loads(msg.body))
+                parking_available = ParkingAvailable.model_validate_json(msg.body)
                 logger.info(f"{str(self.agent.jid)}: ParkingAvailable received from {msg.sender}")
                 user = msg.thread
                 self.agent._per_user_data[user]["parkings"].append(parking_available)
@@ -161,7 +161,7 @@ class RegionalCoordinator(Agent):
                 if len(self.agent._per_user_data[user]["parkings"]) == len(self.agent._parking_agents_jids):
                     logger.info(f"{str(self.agent.jid)}: All parkings Data received.")
                     consolidated_offers = self.agent._consolidate_offers_per_user(user)
-                    consolidated_offers = json.dumps(consolidated_offers.dict())
+                    consolidated_offers = consolidated_offers.model_dump_json()
                     self.agent._per_user_data.pop(user)
                     to_send = Message(
                         to=user,
@@ -177,7 +177,7 @@ class RegionalCoordinator(Agent):
         async def run(self):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
-                reservation_response = ReservationResponse(**json.loads(msg.body))
+                reservation_response = ReservationResponse.model_validate_json(msg.body)
                 logger.info(f"{str(self.agent.jid)}: ReservationResponse received from {msg.sender}")
                 to_send = Message(
                     to=reservation_response.user_id,

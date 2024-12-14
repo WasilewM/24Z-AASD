@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class ParkingAvailable(BaseMessage):
+class ParkingAvailable(BaseModel):
     """Message from Parking to RegionalCoordinator
     about parking availability, price and location"""
 
