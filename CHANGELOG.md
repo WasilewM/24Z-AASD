@@ -22,6 +22,11 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 - Message receivers in all agents.
 - Message encoding and decoding.
+- Reservation modification logic in User.
+
+### Changed
+
+- Dockerfile with sleep infinity command to not exit the container but allow to run different scripts
 
 ## [0.1.5] - 2024.12.10
 

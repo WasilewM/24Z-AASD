@@ -1,6 +1,3 @@
-import calendar
-import json
-import time
 from dataclasses import dataclass
 from typing import List
 
@@ -9,7 +6,7 @@ from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from constants import DEFAULT_HOST, MESSAGE_TIMEOUT
+from constants import MESSAGE_TIMEOUT
 from logger import logger
 from messages.check_offers import CheckOffers
 from messages.consolidated_offers import ConsolidatedOffers, Offer
@@ -27,7 +24,7 @@ class User(Agent):
         self.active_reservations = {}
 
     def _validate_timeslot(self, time_start, time_stop):
-        #TODO: correct time validation
+        # TODO: correct time validation
         # current_time = calendar.timegm(time.gmtime())  # Get current timestamp in UTC timezone
         # if not (time_start < time_stop and time_start > current_time):
         #     raise ValueError("Invalid timeslot")
@@ -62,7 +59,9 @@ class User(Agent):
 
     async def request_parking_offers(self, x, y, time_start, time_stop):
 
-        logger.info(f"{str(self.jid)}: Requesting parking offers for x:{x}, y:{y}, time_start:{time_start}, time_stop:{time_stop}")
+        logger.info(
+            f"{str(self.jid)}: Requesting parking offers for x:{x}, y:{y}, time_start:{time_start}, time_stop:{time_stop}"
+        )
 
         self._validate_location(x, y)
         self._validate_timeslot(time_start, time_stop)
@@ -89,16 +88,21 @@ class User(Agent):
             self.pending_reservation.time_start = time_start
             self.pending_reservation.time_stop = time_stop
             coordinator_id = self.pending_reservation.coordinator_id
+            parking_id = self.pending_reservation.parking_id
             modify_reservation_msg = ModifyReservation(
-                reservation_id=reservation_id, time_start=time_start, time_stop=time_stop, user_id=str(self.jid)
+                reservation_id=reservation_id,
+                time_start=time_start,
+                time_stop=time_stop,
+                user_id=str(self.jid),
+                parking_id=parking_id,
             )
-            # TODO critical: message.to should be correct regional coordinator - can be deleted now?
             to_send = Message(
                 to=f"{coordinator_id}",
                 body=modify_reservation_msg.model_dump_json(),
                 metadata={"performative": "request", "action": "modify-reservation"},
             )
-            await self.send(to_send)
+            aioxmpp_msg = to_send.prepare()
+            await self.client.send(aioxmpp_msg)
             logger.info(f"Modify reservation message sent: {modify_reservation_msg.model_dump_json()}")
         else:
             raise Exception("Reservation not found")
@@ -129,14 +133,17 @@ class User(Agent):
             if msg:
                 consolidated_offers = ConsolidatedOffers.model_validate_json(msg.body)
                 logger.info(
-                    f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}")
+                    f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}"
+                )
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:
                     self.agent.pending_reservation.parking_id = chosen_parking_id
                     res = self.agent.pending_reservation
                     reservation_request = RequestReservation(
-                        time_start=res.time_start, time_stop=res.time_stop, parking_id=chosen_parking_id, user_id=str(
-                            self.agent.jid)
+                        time_start=res.time_start,
+                        time_stop=res.time_stop,
+                        parking_id=chosen_parking_id,
+                        user_id=str(self.agent.jid),
                     )
                     to_send = Message(
                         to=str(msg.sender),
@@ -145,7 +152,8 @@ class User(Agent):
                     )
                     await self.send(to_send)
                     logger.info(
-                        f"{str(self.agent.jid)}: Reservation request to {str(msg.sender)} sent: {reservation_request.model_dump_json()}")
+                        f"{str(self.agent.jid)}: Reservation request to {str(msg.sender)} sent: {reservation_request.model_dump_json()}"
+                    )
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation confirmation"""
@@ -154,11 +162,14 @@ class User(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse.model_validate_json(msg.body)
-                logger.info(f"{str(self.agent.jid)}: Received ReservationResponse: {reservation_response.model_dump_json()}")
+                logger.info(
+                    f"{str(self.agent.jid)}: Received ReservationResponse: {reservation_response.model_dump_json()}"
+                )
                 if reservation_response.success:
                     self.agent.save_reservation(reservation_response, str(msg.sender))
                     logger.info(
-                        f"{str(self.agent.jid)}: Reservation successful. Reservation id: {reservation_response.reservation_id}")
+                        f"{str(self.agent.jid)}: Reservation successful. Reservation id: {reservation_response.reservation_id}"
+                    )
                 else:
                     # TODO Implement reservation failue handling
                     logger.error(f"{str(self.agent.jid)}: Reservation failed.")
