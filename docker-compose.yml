@@ -24,3 +24,14 @@ services:
       resources:
         limits:
           memory: 512MB
+
+  spade_agent:
+    image: spade_hello:latest
+    build:
+      context: .
+    depends_on:
+      - server_hello
+    deploy:
+      resources:
+        limits:
+          memory: 512MB
