@@ -1,18 +1,20 @@
-import spade
-import string
 import json
 import random
+import string
+import uuid
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
 
-from constants import DEFAULT_HOST, PARKING_AGENT_MESSAGE_TIMEOUT
+from constants import PARKING_AGENT_MESSAGE_TIMEOUT
+from logger import logger
 from messages.check_parking import CheckParking
+from messages.modify_reservation import ModifyReservation
 from messages.parking_availability import ParkingAvailable
 from messages.reservation_request import RequestReservation
 from messages.response import ReservationResponse
-from messages.modify_reservation import ModifyReservation
 
 
 class ParkingAgent(Agent):
@@ -25,27 +27,64 @@ class ParkingAgent(Agent):
             parking_spots for _ in range(24)
         ]  # a list with number of free/available spots at a given hour
         self._parking_price = parking_price
+        self._users_reservations = {}  # {user_jid: {reservation_id: [time_start, time_stop]}}
 
     def _prepare_check_parking_spots_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "parking-availability")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "query-ref")
+        template.set_metadata("action", "check-parking")
         return template
 
     def _prepare_make_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "make-reservation")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "request")
+        template.set_metadata("action", "make-reservation")
         return template
 
     def _prepare_modify_reservation_template(self):
         template = Template()
-        template.to = f"{self.jid}@{DEFAULT_HOST}"
-        template.set_metadata("performative", "inform")
-        template.set_metadata("inform", "modify-reservation")
+        template.to = f"{self.jid}"
+        template.set_metadata("performative", "request")
+        template.set_metadata("action", "modify-reservation")
         return template
+
+    def get_available_parking_spots(self, time_start, time_stop):
+        max_available = self._parking_spots
+        for i in range(time_start, time_stop):
+            max_available = min(max_available, self._available_parking_spots[i])
+        return max_available
+
+    def try_to_reserve_parking_spot(self, time_start, time_stop):
+        if self.get_available_parking_spots(time_start, time_stop):
+            for i in range(time_start, time_stop):
+                self._available_parking_spots[i] -= 1
+            return True
+        return False
+
+    def get_available_parking_spots(self, time_start, time_stop):
+        max_available = self._parking_spots
+        for i in range(time_start, time_stop):
+            max_available = min(max_available, self._available_parking_spots[i])
+
+        return max_available
+
+    def free_parking_spots(self, time_start, time_stop):
+        for i in range(time_start, time_stop):
+            self._available_parking_spots[i] += 1
+
+    def generate_reservation_id(self, user_jid):
+        res_id = uuid.uuid5(uuid.NAMESPACE_DNS, user_jid)
+        return str(res_id)
+
+    def store_parking_info_for_user(self, user_jid, reservation_id, time_start, time_stop):
+        if user_jid not in self._users_reservations:
+            self._users_reservations[user_jid] = {}
+        self._users_reservations[user_jid][reservation_id] = [time_start, time_stop]
+
+    def user_is_reservation_owner(self, user_jid, reservation_id):
+        return True if reservation_id in self._users_reservations.get(user_jid, []) else False
 
     class CheckParkingSpots(CyclicBehaviour):
         """Behaviour for answering requests for parking spots"""
@@ -53,28 +92,28 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                check_parking_message = CheckParking(**json.loads(msg.body))
-                available_spots = self.get_available_parking_spots(
+                check_parking_message = CheckParking.model_validate_json(msg.body)
+                logger.info(
+                    f"{str(self.agent.jid)}: Received CheckParking message: {check_parking_message.model_dump_json()}"
+                )
+                available_spots = self.agent.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(self.jid, self._parking_price, self._x, self._y, True if available_spots else False)
+                reply_body = ParkingAvailable(
+                    parking_id=str(self.agent.jid),
+                    parking_price=self.agent._parking_price,
+                    parking_x=self.agent._x,
+                    parking_y=self.agent._y,
+                    available=True if available_spots else False,
+                )
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "check-parking"},
+                    metadata={"performative": "inform", "action": "parking-availability"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
-
-        def get_available_parking_spots(self, time_start, time_stop):
-            max_available = self._parking_spots
-            for i in range(time_start, time_stop):
-                max_available = min(max_available, self._available_parking_spots[i])
-
-            return max_available
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     class MakeReservation(CyclicBehaviour):
         """Behaviour for answering reservation requests"""
@@ -82,39 +121,25 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                request = RequestReservation(**json.loads(msg.body))
-                reservation_status = self.try_to_reserve_parking_spot(request.time_start, request.time_stop)
-                reservation_id = self.generate_reservation_id() if reservation_status else ""
+                request = RequestReservation.model_validate_json(msg.body)
+                logger.info(f"{str(self.agent.jid)}: Received RequestReservation: {request.model_dump_json()}")
+                reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
+                reservation_id = self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
+                self.agent.store_parking_info_for_user(
+                    request.user_id, reservation_id, request.time_start, request.time_stop
+                )
 
-                reply_body = ReservationResponse(reservation_status, request.user_id, reservation_id)
+                reply_body = ReservationResponse(
+                    success=reservation_status, user_id=request.user_id, reservation_id=reservation_id
+                )
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "make-reservation"},
+                    metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
-
-        def try_to_resere_parking_spot(self, time_start, time_stop):
-            if self.get_available_parking_spots(time_start, time_stop):
-                for i in range(time_start, time_stop):
-                    self._available_parking_spots[i] -= 1
-                return True
-            return False
-
-        def get_available_parking_spots(self, time_start, time_stop):
-            max_available = self._parking_spots
-            for i in range(time_start, time_stop):
-                max_available = min(max_available, self._available_parking_spots[i])
-
-            return max_available
-
-        def generate_reservation_id(length=12):
-            # @TODO make some kind of hash based on the time and user id
-            return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     class ModifyReservation(CyclicBehaviour):
         """Behaviour for answering reservation modification requests"""
@@ -122,22 +147,29 @@ class ParkingAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
-                request = ModifyReservation(**json.loads(msg.body))
-                # @TODO implement logic and parking spots checking for modification requests
-                # @TODO check current reservation id from the message and compare it with already requested reservations
-                reservation_status = random.choice([True, False])
+                request = ModifyReservation.model_validate_json(msg.body)
+                logger.info(f"{str(self.agent.jid)}: Received ModifyReservation: {str(request.dict())}")
+                if not self.agent.user_is_reservation_owner(request.user_id, request.reservation_id):
+                    reservation_status = False
+                else:
+                    reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
+                    if reservation_status:
+                        self.agent.store_parking_info_for_user(
+                            request.user_id, request.reservation_id, request.time_start, request.time_stop
+                        )
+                        self.agent.free_parking_spots(request.time_start, request.time_stop)
 
-                reply_body = ReservationResponse(reservation_status, request.user_id, request.reservation_id)
+                reply_body = ReservationResponse(
+                    success=reservation_status, user_id=request.user_id, reservation_id=request.reservation_id
+                )
                 reply = Message(
-                    to=msg.sender,
-                    body=str(reply_body.dict()),
+                    to=str(msg.sender),
+                    body=reply_body.model_dump_json(),
                     thread=msg.thread,
-                    metadata={"performative": "inform", "action": "modify-reservation"},
+                    metadata={"performative": "inform", "action": "reservation-response"},
                 )
                 await self.send(reply)
-                print(f"Reply sent: {reply}")
-            else:
-                print("No message received within the timeout period")
+                logger.info(f"{str(self.agent.jid)}: Reply to {msg.sender} sent: {reply_body.model_dump_json()}")
 
     async def setup(self):
         check_parking_spots_behaviour = self.CheckParkingSpots()

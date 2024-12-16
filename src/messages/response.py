@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class ReservationResponse(BaseMessage):
+class ReservationResponse(BaseModel):
     """Message from Parking to RegionalCoordinator
     and from RegionalCoordinator to User
     about the success of the reservation or modification"""

@@ -1,14 +1,11 @@
-from dataclasses import dataclass
-
-from messages.base import BaseMessage
+from pydantic import BaseModel
 
 
-@dataclass
-class CheckOffers(BaseMessage):
+class CheckOffers(BaseModel):
     """Message from User to RegionalCoordinator
     to check offers for a given position and time range."""
 
     x: int
     y: int
-    time_start: int  # assume timestamp
-    time_stop: int  # assume timestamp
+    time_start: int
+    time_stop: int
