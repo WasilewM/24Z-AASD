@@ -9,3 +9,4 @@ class ModifyReservation(BaseModel):
     time_stop: int
     reservation_id: str
     user_id: str
+    parking_id: str
