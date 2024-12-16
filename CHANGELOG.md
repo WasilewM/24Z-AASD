@@ -4,7 +4,7 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.1] - 2024.12.14
+## [0.2.1] - 2024.12.16
 
 ### Changed
 

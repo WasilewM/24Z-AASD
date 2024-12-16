@@ -93,12 +93,19 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 check_parking_message = CheckParking.model_validate_json(msg.body)
-                logger.info(f"{str(self.agent.jid)}: Received CheckParking message: {check_parking_message.model_dump_json()}")
+                logger.info(
+                    f"{str(self.agent.jid)}: Received CheckParking message: {check_parking_message.model_dump_json()}"
+                )
                 available_spots = self.agent.get_available_parking_spots(
                     check_parking_message.time_start, check_parking_message.time_stop
                 )
-                reply_body = ParkingAvailable(parking_id=str(self.agent.jid), parking_price=self.agent._parking_price, parking_x=self.agent._x,
-                                              parking_y=self.agent._y, available=True if available_spots else False)
+                reply_body = ParkingAvailable(
+                    parking_id=str(self.agent.jid),
+                    parking_price=self.agent._parking_price,
+                    parking_x=self.agent._x,
+                    parking_y=self.agent._y,
+                    available=True if available_spots else False,
+                )
                 reply = Message(
                     to=str(msg.sender),
                     body=reply_body.model_dump_json(),
@@ -119,10 +126,12 @@ class ParkingAgent(Agent):
                 reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                 reservation_id = self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
                 self.agent.store_parking_info_for_user(
-                    request.user_id, reservation_id, request.time_start, request.time_stop)
+                    request.user_id, reservation_id, request.time_start, request.time_stop
+                )
 
-                reply_body = ReservationResponse(success=reservation_status,
-                                                 user_id=request.user_id, reservation_id=reservation_id)
+                reply_body = ReservationResponse(
+                    success=reservation_status, user_id=request.user_id, reservation_id=reservation_id
+                )
                 reply = Message(
                     to=str(msg.sender),
                     body=reply_body.model_dump_json(),
@@ -146,11 +155,13 @@ class ParkingAgent(Agent):
                     reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                     if reservation_status:
                         self.agent.store_parking_info_for_user(
-                            request.user_id, request.reservation_id, request.time_start, request.time_stop)
+                            request.user_id, request.reservation_id, request.time_start, request.time_stop
+                        )
                         self.agent.free_parking_spots(request.time_start, request.time_stop)
 
-                reply_body = ReservationResponse(success=reservation_status,
-                                                 user_id=request.user_id, reservation_id=request.reservation_id)
+                reply_body = ReservationResponse(
+                    success=reservation_status, user_id=request.user_id, reservation_id=request.reservation_id
+                )
                 reply = Message(
                     to=str(msg.sender),
                     body=reply_body.model_dump_json(),

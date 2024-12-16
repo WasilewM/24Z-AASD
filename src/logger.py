@@ -4,8 +4,7 @@ LOG_LEVEL = "info"
 
 
 logger = logging.getLogger()
-formatter = logging.Formatter("%(asctime)s,%(levelname)s: %(message)s",
-                              "%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter("%(asctime)s,%(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)

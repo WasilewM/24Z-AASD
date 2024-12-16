@@ -16,9 +16,15 @@ async def main():
     await parking1.start()
 
     # coordinates from 0,0 to 10,10
-    coordinator1 = RegionalCoordinator(f"regional_coordinator1@{DEFAULT_HOST}", AGENT_PASSWORD, 0, 10, 0, 10,
-                                       parking_agents_jids=[str(parking1.jid)],
-                                       )
+    coordinator1 = RegionalCoordinator(
+        f"regional_coordinator1@{DEFAULT_HOST}",
+        AGENT_PASSWORD,
+        0,
+        10,
+        0,
+        10,
+        parking_agents_jids=[str(parking1.jid)],
+    )
     await coordinator1.start()
 
     # coordinates from 10,0 to 20,10
@@ -35,12 +41,18 @@ async def main():
 
     logger.info("All parkings and coordinators started")
 
-    user1 = User(f"user1@{DEFAULT_HOST}", AGENT_PASSWORD,
-                 coordinators_jids=[str(coordinator1.jid), str(coordinator2.jid), str(coordinator3.jid), str(coordinator4.jid)])
+    user1 = User(
+        f"user1@{DEFAULT_HOST}",
+        AGENT_PASSWORD,
+        coordinators_jids=[str(coordinator1.jid), str(coordinator2.jid), str(coordinator3.jid), str(coordinator4.jid)],
+    )
     await user1.start()
 
-    user2 = User(f"user2@{DEFAULT_HOST}", AGENT_PASSWORD,
-                 coordinators_jids=[str(coordinator1.jid), str(coordinator2.jid), str(coordinator3.jid), str(coordinator4.jid)])
+    user2 = User(
+        f"user2@{DEFAULT_HOST}",
+        AGENT_PASSWORD,
+        coordinators_jids=[str(coordinator1.jid), str(coordinator2.jid), str(coordinator3.jid), str(coordinator4.jid)],
+    )
     await user2.start()
 
     # simple case
