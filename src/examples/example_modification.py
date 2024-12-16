@@ -4,6 +4,7 @@ import spade
 import asyncio
 import sys
 import os
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from agents.user_agent import User
@@ -16,8 +17,7 @@ AGENT_PASSWORD = "admin"
 async def main():
 
     coordinators_jids = ["regional_coordinator1@server_hello", "regional_coordinator2@server_hello"]
-    user1 = User(f"user1@{DEFAULT_HOST}", AGENT_PASSWORD,
-                 coordinators_jids=coordinators_jids)
+    user1 = User(f"user1@{DEFAULT_HOST}", AGENT_PASSWORD, coordinators_jids=coordinators_jids)
     await user1.start()
 
     logger.info("User 1 started")
