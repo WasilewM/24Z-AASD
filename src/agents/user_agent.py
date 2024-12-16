@@ -121,14 +121,17 @@ class User(Agent):
             if msg:
                 consolidated_offers = ConsolidatedOffers.model_validate_json(msg.body)
                 logger.info(
-                    f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}")
+                    f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}"
+                )
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:
                     self.agent.pending_reservation.parking_id = chosen_parking_id
                     res = self.agent.pending_reservation
                     reservation_request = RequestReservation(
-                        time_start=res.time_start, time_stop=res.time_stop, parking_id=chosen_parking_id, user_id=str(
-                            self.agent.jid)
+                        time_start=res.time_start,
+                        time_stop=res.time_stop,
+                        parking_id=chosen_parking_id,
+                        user_id=str(self.agent.jid),
                     )
                     to_send = Message(
                         to=str(msg.sender),
@@ -137,7 +140,8 @@ class User(Agent):
                     )
                     await self.send(to_send)
                     logger.info(
-                        f"{str(self.agent.jid)}: Reservation request to {str(msg.sender)} sent: {reservation_request.model_dump_json()}")
+                        f"{str(self.agent.jid)}: Reservation request to {str(msg.sender)} sent: {reservation_request.model_dump_json()}"
+                    )
 
     class AwaitReservationConfirmation(CyclicBehaviour):
         """Behaviour for waiting for reservation confirmation"""
@@ -146,11 +150,14 @@ class User(Agent):
             msg = await self.receive(timeout=MESSAGE_TIMEOUT)
             if msg:
                 reservation_response = ReservationResponse.model_validate_json(msg.body)
-                logger.info(f"{str(self.agent.jid)}: Received ReservationResponse: {reservation_response.model_dump_json()}")
+                logger.info(
+                    f"{str(self.agent.jid)}: Received ReservationResponse: {reservation_response.model_dump_json()}"
+                )
                 if reservation_response.success:
                     self.agent.save_reservation(reservation_response)
                     logger.info(
-                        f"{str(self.agent.jid)}: Reservation successful. Reservation id: {reservation_response.reservation_id}")
+                        f"{str(self.agent.jid)}: Reservation successful. Reservation id: {reservation_response.reservation_id}"
+                    )
                 else:
                     # TODO Implement reservation failue handling
                     logger.error(f"{str(self.agent.jid)}: Reservation failed.")
