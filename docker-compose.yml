@@ -15,18 +15,7 @@ services:
       - ./tigase/config/config.tdsl:/home/tigase/tigase-server/etc/config.tdsl
 
   spade_main:
-    image: spade_hello:latest
-    build:
-      context: .
-    depends_on:
-      - server_hello
-    deploy:
-      resources:
-        limits:
-          memory: 512MB
-
-  spade_agent:
-    image: spade_hello:latest
+    image: spade_hello:0.2.2
     build:
       context: .
     depends_on:

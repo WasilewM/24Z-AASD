@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 
 RUN chmod +x src/main.py
 CMD sleep infinity
-# CMD python -u src/main.py
+# ENTRYPOINT python -u src/main.py  # to be used when demonstrating basic reservation scenario

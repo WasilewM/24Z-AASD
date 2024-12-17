@@ -100,8 +100,9 @@ class RegionalCoordinator(Agent):
                         "parkings": [],
                         "destination": (check_offers_message.x, check_offers_message.y),
                     }
-                    check_parking = CheckParking(time_start=check_offers_message.time_start,
-                                                 time_stop=check_offers_message.time_stop).model_dump_json()
+                    check_parking = CheckParking(
+                        time_start=check_offers_message.time_start, time_stop=check_offers_message.time_stop
+                    ).model_dump_json()
                     for jid in self.agent._parking_agents_jids:
                         print(f"Sending to jid: {jid}")
                         # user_jid@host in message.thread, need in response from parking agent
