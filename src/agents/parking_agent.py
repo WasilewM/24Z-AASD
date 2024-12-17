@@ -121,7 +121,6 @@ class ParkingAgent(Agent):
             msg = await self.receive(timeout=PARKING_AGENT_MESSAGE_TIMEOUT)
             if msg:
                 request = RequestReservation.model_validate_json(msg.body)
-                logger.info(f"{str(self.agent.jid)}: Received RequestReservation: {request.model_dump_json()}")
                 reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                 reservation_id = self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
                 self.agent.store_parking_info_for_user(
