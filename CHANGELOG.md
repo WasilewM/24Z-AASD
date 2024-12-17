@@ -4,6 +4,12 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.3] - 2024.12.17
+
+## Fixed
+
+- Reservations UUID generation to be unique.
+
 ## [0.2.2] - 2024.12.16
 
 ### Added
