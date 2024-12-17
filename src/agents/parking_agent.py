@@ -1,7 +1,5 @@
-import json
-import random
-import string
 import uuid
+from datetime import datetime
 
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
@@ -75,7 +73,8 @@ class ParkingAgent(Agent):
             self._available_parking_spots[i] += 1
 
     def generate_reservation_id(self, user_jid):
-        res_id = uuid.uuid5(uuid.NAMESPACE_DNS, user_jid)
+        # without the time part each request from the same user gets the same uuid
+        res_id = uuid.uuid5(uuid.NAMESPACE_DNS, f"{user_jid}{datetime.now()}")
         return str(res_id)
 
     def store_parking_info_for_user(self, user_jid, reservation_id, time_start, time_stop):
@@ -154,6 +153,13 @@ class ParkingAgent(Agent):
                 else:
                     reservation_status = self.agent.try_to_reserve_parking_spot(request.time_start, request.time_stop)
                     if reservation_status:
+                        new_reservation_id = (
+                            self.agent.generate_reservation_id(request.user_id) if reservation_status else ""
+                        )
+                        logger.info(
+                            f"{str(self.agent.jid)}: New reservation id has been generated: {new_reservation_id}, {request.reservation_id}"
+                        )
+                        request.reservation_id = new_reservation_id
                         self.agent.store_parking_info_for_user(
                             request.user_id, request.reservation_id, request.time_start, request.time_stop
                         )
