@@ -61,18 +61,12 @@ class ParkingAgent(Agent):
             return True
         return False
 
-    def get_available_parking_spots(self, time_start, time_stop):
-        max_available = self._parking_spots
-        for i in range(time_start, time_stop):
-            max_available = min(max_available, self._available_parking_spots[i])
-
-        return max_available
-
     def free_parking_spots(self, time_start, time_stop):
         for i in range(time_start, time_stop):
             self._available_parking_spots[i] += 1
 
-    def generate_reservation_id(self, user_jid):
+    @staticmethod
+    def generate_reservation_id(user_jid):
         # without the time part each request from the same user gets the same uuid
         res_id = uuid.uuid5(uuid.NAMESPACE_DNS, f"{user_jid}{datetime.now()}")
         return str(res_id)
