@@ -4,6 +4,14 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## Fixed
+
+- Parking offer selection if none is available.
+
+## Added
+
+- Example with no available parking spot.
+
 ## [0.2.3] - 2024.12.17
 
 ## Fixed
@@ -14,20 +22,20 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Coordinator_id in User's Reservation
+- Coordinator_id in User's Reservation.
 
 ## [0.2.1] - 2024.12.16
 
 ### Changed
 
-- Models use pydantic
+- Models use pydantic.
 
 ## [0.2.0] - 2024.12.14
 
 ### Added
 
 - Modifying reservation in Parking Agent.
-- Improved logging
+- Improved logging.
 
 ### Fixed
 
@@ -37,7 +45,7 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Dockerfile with sleep infinity command to not exit the container but allow to run different scripts
+- Dockerfile with sleep infinity command to not exit the container but allow to run different scripts.
 
 ## [0.1.5] - 2024.12.10
 
@@ -55,11 +63,11 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- `User` agent with main methods for creating and modifying a reservation
+- `User` agent with main methods for creating and modifying a reservation.
 
 ### Changed
 
-- `reservation_id` attribute to `ReservationResponse` message
+- `reservation_id` attribute to `ReservationResponse` message.
 
 ## [0.1.3] - 2024-12-01
 
@@ -88,5 +96,5 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 - Proposed using `dataclass` for message bodies in `src/messages`, loaded with:
 
   ```python
-  message_body=NazwaKlasy(**json.loads(message.body))
+  message_body=ClassName(**json.loads(message.body))
   ```

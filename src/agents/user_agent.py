@@ -109,7 +109,10 @@ class User(Agent):
 
     def choose_parking_offer(self, offers: List[Offer]):
         # TODO implement logic of choosing an offer
-        return offers[0].parking_id if offers else None
+        try:
+            return offers[0].parking_id if offers else ""
+        except Exception:
+            return ""
 
     def save_reservation(self, reservation_response: ReservationResponse, coordinator_id):
         if not self.pending_reservation:
