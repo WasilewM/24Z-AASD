@@ -53,7 +53,7 @@ async def main():
     logger.info("All users started")
 
     time.sleep(5)
-    logger.info("NO AVAILABLE PARKING SPOTS TEST CASE")
+    logger.info("MULTIPLE REQUESTS TEST CASE")
 
     logger.info("\n\nExpected 2 requests acceptance")
     await user1.request_parking_offers(5, 5, 8, 16)
