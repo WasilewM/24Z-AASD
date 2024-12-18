@@ -4,6 +4,8 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.4] - 2024.12.18
+
 ## Fixed
 
 - Parking offer selection if none is available.
@@ -11,6 +13,7 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 ## Added
 
 - Example with no available parking spot.
+- Example with mutliple requests.
 
 ## [0.2.3] - 2024.12.17
 

@@ -58,6 +58,8 @@ class ParkingAgent(Agent):
         if self.get_available_parking_spots(time_start, time_stop):
             for i in range(time_start, time_stop):
                 self._available_parking_spots[i] -= 1
+
+            print({i:self._available_parking_spots[i] for i in range(len(self._available_parking_spots))})
             return True
         return False
 
