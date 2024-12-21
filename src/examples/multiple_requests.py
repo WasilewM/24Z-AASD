@@ -18,6 +18,8 @@ AGENT_PASSWORD = "admin"
 async def main():
     parking1 = ParkingAgent(f"parking100@{DEFAULT_HOST}", AGENT_PASSWORD, 1, 1, 10)
     await parking1.start()
+    parking2 = ParkingAgent(f"parking200@{DEFAULT_HOST}", AGENT_PASSWORD, 5, 1, 5, 5)
+    await parking2.start()
 
     # coordinates from 0,0 to 10,10
     coordinator1 = RegionalCoordinator(
@@ -27,7 +29,7 @@ async def main():
         10,
         0,
         10,
-        parking_agents_jids=[str(parking1.jid)],
+        parking_agents_jids=[str(parking1.jid), str(parking2.jid)],
     )
     await coordinator1.start()
 
