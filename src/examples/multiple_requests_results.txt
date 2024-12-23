@@ -1,0 +1,157 @@
+# python3 multiple_requests.py
+2024-12-21 18:01:33,INFO: Starting
+2024-12-21 18:01:34,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:35,INFO: bound to jid: parking100@server_hello/670925164-tigase-1
+2024-12-21 18:01:35,INFO: Agent parking100@server_hello connected and authenticated.
+2024-12-21 18:01:35,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:35,INFO: bound to jid: parking200@server_hello/670925164-tigase-2
+2024-12-21 18:01:35,INFO: Agent parking200@server_hello connected and authenticated.
+2024-12-21 18:01:36,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:36,INFO: bound to jid: regional_coordinator1@server_hello/670925164-tigase-3
+2024-12-21 18:01:36,INFO: Agent regional_coordinator1@server_hello connected and authenticated.
+2024-12-21 18:01:36,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:36,INFO: bound to jid: regional_coordinator2@server_hello/670925164-tigase-4
+2024-12-21 18:01:36,INFO: Agent regional_coordinator2@server_hello connected and authenticated.
+2024-12-21 18:01:36,INFO: All parkings and coordinators started
+2024-12-21 18:01:37,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:37,INFO: bound to jid: user1@server_hello/670925164-tigase-5
+2024-12-21 18:01:37,INFO: Agent user1@server_hello connected and authenticated.
+2024-12-21 18:01:37,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:37,INFO: bound to jid: user2@server_hello/670925164-tigase-6
+2024-12-21 18:01:37,INFO: Agent user2@server_hello connected and authenticated.
+2024-12-21 18:01:38,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:38,INFO: bound to jid: user3@server_hello/670925164-tigase-7
+2024-12-21 18:01:38,INFO: Agent user3@server_hello connected and authenticated.
+2024-12-21 18:01:38,INFO: attempting SCRAM-SHA-256 mechanism (using SCRAMHashInfo(hashfun_name='sha256', quality=256, minimum_iteration_count=4096) hashfun)
+2024-12-21 18:01:38,INFO: bound to jid: user4@server_hello/670925164-tigase-8
+2024-12-21 18:01:38,INFO: Agent user4@server_hello connected and authenticated.
+2024-12-21 18:01:38,INFO: All users started
+2024-12-21 18:01:43,INFO: MULTIPLE REQUESTS TEST CASE
+2024-12-21 18:01:43,INFO: 
+
+Expected 2 requests acceptance
+2024-12-21 18:01:43,INFO: user1@server_hello: Requesting parking offers for x:5, y:5, time_start:8, time_stop:16
+2024-12-21 18:01:43,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:43,INFO: user2@server_hello: Requesting parking offers for x:5, y:5, time_start:16, time_stop:17
+2024-12-21 18:01:43,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:43,INFO: Waiting for reservation
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckOffers message received from user2@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: Sending to jid: parking100@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking100@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: Sending to jid: parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckOffers message received from user1@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: Sending to jid: parking100@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking100@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: Sending to jid: parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking200@server_hello
+2024-12-21 18:01:43,INFO: parking100@server_hello: Received CheckParking message: {"time_start":16,"time_stop":17}
+2024-12-21 18:01:43,INFO: parking100@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking100@server_hello","parking_price":40,"parking_x":1,"parking_y":1,"available":true}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Received CheckParking message: {"time_start":16,"time_stop":17}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking200@server_hello","parking_price":5,"parking_x":5,"parking_y":1,"available":true}
+2024-12-21 18:01:43,INFO: parking100@server_hello: Received CheckParking message: {"time_start":8,"time_stop":16}
+2024-12-21 18:01:43,INFO: parking100@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking100@server_hello","parking_price":40,"parking_x":1,"parking_y":1,"available":true}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Received CheckParking message: {"time_start":8,"time_stop":16}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking200@server_hello","parking_price":5,"parking_x":5,"parking_y":1,"available":true}
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking100@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: All parkings Data received.
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ConsolidatedOffers sent to user2@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking100@server_hello
+2024-12-21 18:01:43,INFO: user2@server_hello: Received ConsolidatedOffers from regional_coordinator1@server_hello: {"offers":[{"parking_id":"parking200@server_hello","price":5,"distance":4.0},{"parking_id":"parking100@server_hello","price":40,"distance":5.66}]}
+2024-12-21 18:01:43,INFO: Chosen parking offer: parking200@server_hello
+2024-12-21 18:01:43,INFO: user2@server_hello: Reservation request to regional_coordinator1@server_hello sent: {"time_start":16,"time_stop":17,"parking_id":"parking200@server_hello","user_id":"user2@server_hello"}
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: All parkings Data received.
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ConsolidatedOffers sent to user1@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: RequestReservation received from user2@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: RequestReservation sent to parking200@server_hello
+2024-12-21 18:01:43,INFO: user1@server_hello: Received ConsolidatedOffers from regional_coordinator1@server_hello: {"offers":[{"parking_id":"parking200@server_hello","price":5,"distance":4.0},{"parking_id":"parking100@server_hello","price":40,"distance":5.66}]}
+2024-12-21 18:01:43,INFO: Chosen parking offer: parking200@server_hello
+2024-12-21 18:01:43,INFO: user1@server_hello: Reservation request to regional_coordinator1@server_hello sent: {"time_start":8,"time_stop":16,"parking_id":"parking200@server_hello","user_id":"user1@server_hello"}
+2024-12-21 18:01:43,INFO: {0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5, 10: 5, 11: 5, 12: 5, 13: 5, 14: 5, 15: 5, 16: 4, 17: 5, 18: 5, 19: 5, 20: 5, 21: 5, 22: 5, 23: 5}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"success":true,"user_id":"user2@server_hello","reservation_id":"57b37a85-8e86-5551-8ac0-fe5db896c64d"}
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: RequestReservation received from user1@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: RequestReservation sent to parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ReservationResponse received from parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ReservationResponse sent to user2@server_hello
+2024-12-21 18:01:43,INFO: {0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 4, 9: 4, 10: 4, 11: 4, 12: 4, 13: 4, 14: 4, 15: 4, 16: 4, 17: 5, 18: 5, 19: 5, 20: 5, 21: 5, 22: 5, 23: 5}
+2024-12-21 18:01:43,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"success":true,"user_id":"user1@server_hello","reservation_id":"37ec394d-48f3-563e-983a-dab54593aaad"}
+2024-12-21 18:01:43,INFO: user2@server_hello: Received ReservationResponse: {"success":true,"user_id":"user2@server_hello","reservation_id":"57b37a85-8e86-5551-8ac0-fe5db896c64d"}
+2024-12-21 18:01:43,INFO: user2@server_hello: Reservation successful. Reservation id: 57b37a85-8e86-5551-8ac0-fe5db896c64d
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ReservationResponse received from parking200@server_hello
+2024-12-21 18:01:43,INFO: regional_coordinator1@server_hello: ReservationResponse sent to user1@server_hello
+2024-12-21 18:01:43,INFO: user1@server_hello: Received ReservationResponse: {"success":true,"user_id":"user1@server_hello","reservation_id":"37ec394d-48f3-563e-983a-dab54593aaad"}
+2024-12-21 18:01:43,INFO: user1@server_hello: Reservation successful. Reservation id: 37ec394d-48f3-563e-983a-dab54593aaad
+2024-12-21 18:01:48,INFO: Active reservations: {'37ec394d-48f3-563e-983a-dab54593aaad': Reservation(x=5, y=5, id='37ec394d-48f3-563e-983a-dab54593aaad', time_start=8, time_stop=16, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:48,INFO: Active reservations: {'57b37a85-8e86-5551-8ac0-fe5db896c64d': Reservation(x=5, y=5, id='57b37a85-8e86-5551-8ac0-fe5db896c64d', time_start=16, time_stop=17, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:48,INFO: 
+
+Expected 2 requests acceptance
+2024-12-21 18:01:48,INFO: user3@server_hello: Requesting parking offers for x:5, y:5, time_start:9, time_stop:15
+2024-12-21 18:01:48,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:48,INFO: user4@server_hello: Requesting parking offers for x:5, y:5, time_start:13, time_stop:14
+2024-12-21 18:01:48,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:48,INFO: Waiting for reservation
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckOffers message received from user3@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: Sending to jid: parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: Sending to jid: parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking200@server_hello
+2024-12-21 18:01:49,INFO: parking100@server_hello: Received CheckParking message: {"time_start":9,"time_stop":15}
+2024-12-21 18:01:49,INFO: parking100@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking100@server_hello","parking_price":40,"parking_x":1,"parking_y":1,"available":true}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Received CheckParking message: {"time_start":9,"time_stop":15}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking200@server_hello","parking_price":5,"parking_x":5,"parking_y":1,"available":true}
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: All parkings Data received.
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ConsolidatedOffers sent to user3@server_hello
+2024-12-21 18:01:49,INFO: user3@server_hello: Received ConsolidatedOffers from regional_coordinator1@server_hello: {"offers":[{"parking_id":"parking200@server_hello","price":5,"distance":4.0},{"parking_id":"parking100@server_hello","price":40,"distance":5.66}]}
+2024-12-21 18:01:49,INFO: Chosen parking offer: parking200@server_hello
+2024-12-21 18:01:49,INFO: user3@server_hello: Reservation request to regional_coordinator1@server_hello sent: {"time_start":9,"time_stop":15,"parking_id":"parking200@server_hello","user_id":"user3@server_hello"}
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckOffers message received from user4@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: Sending to jid: parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: Sending to jid: parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: CheckParking message sent to parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: RequestReservation received from user3@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: RequestReservation sent to parking200@server_hello
+2024-12-21 18:01:49,INFO: parking100@server_hello: Received CheckParking message: {"time_start":13,"time_stop":14}
+2024-12-21 18:01:49,INFO: parking100@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking100@server_hello","parking_price":40,"parking_x":1,"parking_y":1,"available":true}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Received CheckParking message: {"time_start":13,"time_stop":14}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"parking_id":"parking200@server_hello","parking_price":5,"parking_x":5,"parking_y":1,"available":true}
+2024-12-21 18:01:49,INFO: {0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 4, 9: 3, 10: 3, 11: 3, 12: 3, 13: 3, 14: 3, 15: 4, 16: 4, 17: 5, 18: 5, 19: 5, 20: 5, 21: 5, 22: 5, 23: 5}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"success":true,"user_id":"user3@server_hello","reservation_id":"0e734f67-00d4-50bf-9413-c25327339b47"}
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking100@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ReservationResponse received from parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ReservationResponse sent to user3@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ParkingAvailable received from parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: All parkings Data received.
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ConsolidatedOffers sent to user4@server_hello
+2024-12-21 18:01:49,INFO: user3@server_hello: Received ReservationResponse: {"success":true,"user_id":"user3@server_hello","reservation_id":"0e734f67-00d4-50bf-9413-c25327339b47"}
+2024-12-21 18:01:49,INFO: user3@server_hello: Reservation successful. Reservation id: 0e734f67-00d4-50bf-9413-c25327339b47
+2024-12-21 18:01:49,INFO: user4@server_hello: Received ConsolidatedOffers from regional_coordinator1@server_hello: {"offers":[{"parking_id":"parking200@server_hello","price":5,"distance":4.0},{"parking_id":"parking100@server_hello","price":40,"distance":5.66}]}
+2024-12-21 18:01:49,INFO: Chosen parking offer: parking200@server_hello
+2024-12-21 18:01:49,INFO: user4@server_hello: Reservation request to regional_coordinator1@server_hello sent: {"time_start":13,"time_stop":14,"parking_id":"parking200@server_hello","user_id":"user4@server_hello"}
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: RequestReservation received from user4@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: RequestReservation sent to parking200@server_hello
+2024-12-21 18:01:49,INFO: {0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 4, 9: 3, 10: 3, 11: 3, 12: 3, 13: 2, 14: 3, 15: 4, 16: 4, 17: 5, 18: 5, 19: 5, 20: 5, 21: 5, 22: 5, 23: 5}
+2024-12-21 18:01:49,INFO: parking200@server_hello: Reply to regional_coordinator1@server_hello sent: {"success":true,"user_id":"user4@server_hello","reservation_id":"17a9b156-fcea-5bd5-b682-c21fde13c929"}
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ReservationResponse received from parking200@server_hello
+2024-12-21 18:01:49,INFO: regional_coordinator1@server_hello: ReservationResponse sent to user4@server_hello
+2024-12-21 18:01:49,INFO: user4@server_hello: Received ReservationResponse: {"success":true,"user_id":"user4@server_hello","reservation_id":"17a9b156-fcea-5bd5-b682-c21fde13c929"}
+2024-12-21 18:01:49,INFO: user4@server_hello: Reservation successful. Reservation id: 17a9b156-fcea-5bd5-b682-c21fde13c929
+2024-12-21 18:01:53,INFO: Active reservations: {'0e734f67-00d4-50bf-9413-c25327339b47': Reservation(x=5, y=5, id='0e734f67-00d4-50bf-9413-c25327339b47', time_start=9, time_stop=15, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:53,INFO: Active reservations: {'17a9b156-fcea-5bd5-b682-c21fde13c929': Reservation(x=5, y=5, id='17a9b156-fcea-5bd5-b682-c21fde13c929', time_start=13, time_stop=14, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:53,INFO: 
+
+Expected 2 denials - no parking in chosen location
+2024-12-21 18:01:53,INFO: user3@server_hello: Requesting parking offers for x:15, y:5, time_start:17, time_stop:19
+2024-12-21 18:01:53,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:53,INFO: user4@server_hello: Requesting parking offers for x:11, y:5, time_start:16, time_stop:17
+2024-12-21 18:01:53,INFO: Check offers message sent to coordinators: ['regional_coordinator1@server_hello', 'regional_coordinator2@server_hello']
+2024-12-21 18:01:53,INFO: Active reservations: {'0e734f67-00d4-50bf-9413-c25327339b47': Reservation(x=5, y=5, id='0e734f67-00d4-50bf-9413-c25327339b47', time_start=9, time_stop=15, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:53,INFO: Active reservations: {'17a9b156-fcea-5bd5-b682-c21fde13c929': Reservation(x=5, y=5, id='17a9b156-fcea-5bd5-b682-c21fde13c929', time_start=13, time_stop=14, parking_id='parking200@server_hello', coordinator_id='regional_coordinator1@server_hello')}
+2024-12-21 18:01:53,INFO: TEST HAS FINISHED
+2024-12-21 18:01:53,INFO: regional_coordinator2@server_hello: CheckOffers message received from user3@server_hello
+2024-12-21 18:01:53,INFO: regional_coordinator2@server_hello: CheckOffers message received from user4@server_hello
