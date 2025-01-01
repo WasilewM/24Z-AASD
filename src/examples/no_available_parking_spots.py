@@ -1,8 +1,9 @@
-import time
-import spade
 import asyncio
-import sys
 import os
+import sys
+import time
+
+import spade
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -50,9 +51,10 @@ async def main():
     logger.info("NO AVAILABLE PARKING SPOTS TEST CASE")
 
     await user1.request_parking_offers(5, 5, 8, 16)
+    await asyncio.sleep(5)
     await user2.request_parking_offers(5, 5, 12, 16)
 
-    while not user1.active_reservations:
+    while user1.active_reservations == {}:
         logger.info("Waiting for reservation")
         await asyncio.sleep(5)
 
