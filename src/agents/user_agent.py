@@ -141,6 +141,10 @@ class User(Agent):
                 logger.info(
                     f"{str(self.agent.jid)}: Received ConsolidatedOffers from {msg.sender}: {consolidated_offers.model_dump_json()}"
                 )
+                if consolidated_offers.offers == []:
+                    logger.error(f"{str(self.agent.jid)}: No parking spots available")
+                    return
+                
                 chosen_parking_id = self.agent.choose_parking_offer(consolidated_offers.offers)
                 if self.agent.pending_reservation:
                     self.agent.pending_reservation.parking_id = chosen_parking_id

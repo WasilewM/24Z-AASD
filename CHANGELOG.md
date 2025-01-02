@@ -4,6 +4,12 @@ Format according to the [keepachangelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.5] - 2025.01.02
+
+## Fixed
+
+- User ends while no offers for requested time.
+
 ## [0.2.4] - 2024.12.18
 
 ## Fixed
